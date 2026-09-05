@@ -100,3 +100,6 @@ openptt/
 ## 貢獻 / License
 
 歡迎開 issue / PR;本專案以 MIT License 釋出,細節見 `LICENSE`。
+
+
+<!-- Last validated: 2026-09-06 by OpenClaw Overnight Dev -->
