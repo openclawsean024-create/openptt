@@ -2,7 +2,7 @@
 
 OpenPTT 是一個開源的全平台 PTT 看板瀏覽器,以經典 iOS App「BePTT」為視覺與互動基準,目標是讓使用者不必打開 PTT BBS 也能在 Web / iOS / Android 上流暢地瀏覽看板、閱讀文章、切換分類、收藏常用板,並保留 PTT 原生使用者最熟悉的「推 / 噓 / → / 爆」等符號語感。
 
-目前 repo 處於 **Sprint 1 + Sprint 2 收尾** 階段,Web 端已具備完整可用雛形;iOS / Android 將以 Capacitor 殼包入同一份 Web bundle 來交付。下一階段會把 mock 資料換成真實 Ptt 爬蟲、加入推播與搜尋索引。
+目前 repo 進入 **M3 React production increment**：Web 端已接上 reading-first shell、Dashboard、閱讀歷史與指定看板關鍵字訂閱；目前仍使用 mock/static data，iOS / Android、真實 PTT adapter、推播與搜尋索引另列後續 milestone。
 
 ---
 
@@ -10,6 +10,7 @@ OpenPTT 是一個開源的全平台 PTT 看板瀏覽器,以經典 iOS App「BePT
 
 - [x] **Sprint 1** — 5 個 P0 功能 + 5 個 E2E 測試(mock 5 個看板)
 - [x] **Sprint 2** — 33 個 Ptt 看板 + Article metadata + 8 分類 + 3 排序 + 看板搜尋 + 5 新 E2E
+- [x] **M3 increment** — React responsive shell + Dashboard + 閱讀歷史 + 指定看板關鍵字訂閱
 - [ ] P2-6 效能(React.memo + 虛擬滾動)
 - [ ] Capacitor iOS + Android 平台殼
 - [ ] Sprint 3 真實 Ptt 爬蟲 / 推播 / search index
@@ -33,7 +34,7 @@ git clone https://github.com/openclawsean024-create/openptt.git
 cd openptt/web
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 10/10 E2E
+npm test         # 13/13 Vitest + RTL
 npm run build    # tsc + vite build
 ```
 
@@ -46,7 +47,11 @@ npm run build    # tsc + vite build
 ```
 openptt/
 ├── PRD/
-│   └── SPEC.md                # 完整產品規格 (v3.0, 15 章)
+│   ├── SPEC.md                # Product Requirements Document v4.1
+│   ├── UI-SPEC.md             # UI contract v1.1
+│   └── CHANGELOG.md
+├── prototype/
+│   └── openptt.html           # 獨立可互動 HTML 視覺原型
 ├── SPRINT1_HANDOVER.md        # Sprint 1 移交紀錄
 ├── SPRINT2_GOAL.md            # Sprint 2 目標
 ├── web/
@@ -61,7 +66,7 @@ openptt/
 │   │   ├── main.tsx           # React 入口
 │   │   ├── index.css          # Tailwind v4 + 全域樣式
 │   │   ├── components/
-│   │   │   ├── Layout.tsx
+│   │   │   ├── Layout.tsx          # responsive shell + sidebar / mobile menu
 │   │   │   └── ThemeToggle.tsx
 │   │   ├── data/
 │   │   │   ├── boards.ts      # 33 個 Ptt 看板 metadata
@@ -70,17 +75,33 @@ openptt/
 │   │   │   ├── createStore.ts # 極簡 reactive store
 │   │   │   ├── favorites.ts
 │   │   │   ├── theme.ts
-│   │   │   └── useFavorites.ts
+│   │   │   ├── useFavorites.ts
+│   │   │   ├── recent.ts / useRecent.ts
+│   │   │   └── subscriptions.ts / useSubscriptions.ts
 │   │   └── pages/
 │   │       ├── BoardListPage.tsx   # 看板列表 / 分類 / 搜尋
 │   │       ├── BoardPage.tsx       # 單板文章列表
 │   │       ├── ArticlePage.tsx     # 文章內文
-│   │       └── FavoritesPage.tsx   # 收藏板
+│   │       ├── FavoritesPage.tsx   # 收藏板 / 文章
+│   │       ├── DashboardPage.tsx
+│   │       ├── HotPage.tsx
+│   │       ├── HistoryPage.tsx
+│   │       └── SettingsPage.tsx
 │   └── tests/
 │       ├── e2e.test.tsx       # 10 個 E2E (Vitest + RTL)
 │       └── setup.ts
 └── README.md                  # 你正在看的檔案
 ```
+
+## 規格與 prototype
+
+- [PRD/SPEC.md](PRD/SPEC.md)：產品範圍、FR/AC、資料契約、路線圖。
+- [PRD/UI-SPEC.md](PRD/UI-SPEC.md)：視覺系統、responsive layout、screen/component contract、指定看板關鍵字訂閱 flow。
+- [prototype/openptt.html](prototype/openptt.html)：直接以瀏覽器開啟即可操作；不依賴 npm、CDN 或外部圖片。
+
+Prototype 目前示範：從看板頁建立關鍵字訂閱、在文章列表查看命中 badge、到設定頁啟用 / 停用 / 刪除訂閱。這是 local-only in-app flow，尚未接 Web Push。
+
+M3 已依 prototype review 進入 production React；目前先完成高頻閱讀流程，延後功能仍以產品邊界控管，不宣稱登入、推播或付款已完成。
 
 ---
 

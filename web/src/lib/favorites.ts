@@ -35,11 +35,13 @@ export function addFavorite(item: Omit<FavoriteItem, 'addedAt'>) {
   if (items.some((i) => i.type === item.type && i.id === item.id)) return
   items.push({ ...item, addedAt: Date.now() })
   write(items)
+  emitFavorites()
 }
 
 export function removeFavorite(type: FavoriteItem['type'], id: string) {
   const items = read().filter((i) => !(i.type === type && i.id === id))
   write(items)
+  emitFavorites()
 }
 
 export function isFavorite(type: FavoriteItem['type'], id: string): boolean {
@@ -53,6 +55,12 @@ export function reorderFavorites(fromIdx: number, toIdx: number) {
   const [moved] = items.splice(fromIdx, 1)
   items.splice(toIdx, 0, moved)
   write(items)
+  emitFavorites()
+}
+
+export function clearAllFavorites() {
+  write([])
+  emitFavorites()
 }
 
 // subscribe helper for components that want reactive updates

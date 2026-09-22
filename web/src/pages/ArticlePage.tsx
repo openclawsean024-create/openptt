@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { getArticle } from '../data/boards'
-import { addFavorite, removeFavorite, isFavorite } from '../lib/favorites'
+import { addFavorite, removeFavorite } from '../lib/favorites'
+import { useFavorites } from '../lib/useFavorites'
+import { recordRecent } from '../lib/recent'
 
 export default function ArticlePage() {
   const { articleId } = useParams<{ articleId: string }>()
@@ -18,10 +20,24 @@ export default function ArticlePage() {
     }
     return undefined
   }, [articleId, board])
+  const favorites = useFavorites()
 
-  if (!article) return <div className="text-center text-slate-500 py-12" data-testid="article-not-found">文章不存在</div>
+  useEffect(() => {
+    if (article) recordRecent({ type: 'article', id: article.id, label: article.title, board: article.board })
+  }, [article])
 
-  const faved = isFavorite('article', article.id)
+  if (!article) return (
+    <div className="py-12 text-center text-slate-500" data-testid="article-not-found">
+      <p className="font-semibold">文章不存在</p>
+      <p className="mt-2 text-sm">這篇文章可能已被移除，或目前沒有對應的示範資料。</p>
+      <div className="mt-4 flex justify-center gap-3 text-sm">
+        {board && <Link to={`/board/${board}`} className="rounded-lg border border-slate-300 px-3 py-2 font-semibold hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">← 回看板</Link>}
+        <Link to="/boards" className="rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-700">看板列表</Link>
+      </div>
+    </div>
+  )
+
+  const faved = favorites.some(item => item.type === 'article' && item.id === article.id)
   const toggleFav = () => {
     if (faved) removeFavorite('article', article.id)
     else addFavorite({ type: 'article', id: article.id, label: article.title })

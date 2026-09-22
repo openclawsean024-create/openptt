@@ -1,5 +1,38 @@
 # openptt · CHANGELOG
 
+## M3 — 2026-09-21 · React production increment
+
+- 修正 \`web/index.html\`，根入口正式掛載 Vite React app，不再導向舊 dashboard 草稿。
+- 依核准 prototype 接入 responsive reading-first shell、Dashboard、熱門文章、閱讀歷史與設定頁。
+- 新增 \`openptt:recent\` 最近瀏覽資料層與 \`openptt:keyword-subscriptions\` 指定看板關鍵字訂閱資料層。
+- 看板頁支援關鍵字建立、命中 badge、啟用 / 停用 / 刪除；設定頁提供分看板管理。
+- 補齊對標功能地圖的即時熱門、看板歷史、文章收藏、關於與延後功能狀態 route。
+- 補齊看板空狀態／分類篩選、文章不存在 recovery、最愛 tabs + undo toast、Dashboard 搜尋與 `/` 快捷鍵。
+- SettingsPage 補上 UI-006「資料與隱私」區塊：收藏、關鍵字訂閱、最近瀏覽清除與主題重置，均保留確認流程與 aria-live feedback。
+- React 測試由 10 件增加至 23 件；typecheck、build、route smoke 與 `git diff --check` 通過。
+
+## v4.1 — 2026-09-21 · 指定看板關鍵字訂閱
+
+**新增**：
+- `FR-011`：每筆訂閱綁定一個看板與一個關鍵字，支援啟用、停用、刪除與 localStorage 持久化。
+- 關鍵字比對文章標題、內文與 tags；同一看板不允許重複啟用相同關鍵字。
+- `UI-007`：看板頁 subscription sheet、設定頁管理清單、文章命中 badge 與上限 / empty / disabled states。
+- HTML prototype 可操作建立訂閱、查看命中提示與管理訂閱。
+
+**邊界**：
+- v4.1 規格階段只補產品與 prototype flow；M3 已接入 React production UI，仍未接 Web Push / APNs / FCM。
+- 「關鍵字訂閱」是免費的本機閱讀偏好，不等於付費訂閱方案。
+
+## v4.0 — 2026-09-21 · PRD / UI alignment
+
+**新增**：
+- 重整 `PRD/SPEC.md`，補足 MVP 邊界、Persona、可觀測指標、FR/AC、資料契約、NFR、風險與 milestone。
+- 新增 `PRD/UI-SPEC.md`，定義 reading-first visual system、responsive layout、screen/component contract、loading/empty/error/stale states 與 accessibility checklist。
+- 新增 `prototype/openptt.html`，作為與 Sean 確認後才進 React UI 實作的獨立視覺原型。
+
+**刻意不做**：
+- 本次不修改 `web/src/` production UI、不部署、不 push；prototype review 後才進 M3。
+
 > 維護：Hermes Agent for Sean
 > 原始版本：v3.0（15 章，2026-08-09）；本 CHANGELOG 為 v3.0.2 fleet 升級版
 

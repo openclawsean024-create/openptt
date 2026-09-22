@@ -9,8 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "NODE_OPTIONS=--localstorage-file=./.vitest-localstorage vitest run",
+    "test:watch": "NODE_OPTIONS=--localstorage-file=./.vitest-localstorage vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {

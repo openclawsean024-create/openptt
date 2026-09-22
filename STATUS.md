@@ -1,5 +1,26 @@
 # OpenPTT — Sprint 1+2 驗收狀態
 
+## M3 React production increment（2026-09-21）
+
+- ✅ \`web/index.html\` 已修正為 Vite React root，不再轉址到舊 \`public/dashboard.html\`。
+- ✅ reading-first responsive shell：desktop sidebar、mobile bottom nav、mobile menu drawer。
+- ✅ Dashboard、熱門文章、閱讀歷史與設定頁已接入 React Router。
+- ✅ FR-009：最近 10 個看板 / 文章寫入 \`openptt:recent\`，可在首頁與歷史頁檢視、清除。
+- ✅ FR-011：指定看板關鍵字訂閱寫入 \`openptt:keyword-subscriptions\`，支援建立、命中 badge、啟用 / 停用、刪除與設定頁管理。
+- ✅ React smoke：Dashboard、Stock 訂閱建立、命中提示、設定管理、390px mobile menu 已以瀏覽器驗證。
+- ✅ deterministic checks：typecheck、23/23 Vitest、build、\`git diff --check\` 通過；route smoke 18 條全部回傳 200 且保留 React root/title。
+- ✅ Codex + MiniMax follow-up：補齊看板空狀態／分類篩選、文章不存在 recovery、最愛 tabs + undo toast、Dashboard 搜尋與 `/` 快捷鍵，以及 SettingsPage UI-006 資料與隱私清除區塊；驗收紀錄見 `PRD/MINIMAX-HANDOFF.md`。
+
+下一個 bounded increment：以瀏覽器做 390px / desktop 的 production visual QA，再評估真實 PTT data adapter；本輪不部署、不 push。
+
+## M2.5 規格與 UI 原型（2026-09-21，歷史快照）
+
+- ✅ `PRD/SPEC.md` 重整為 v4.0：產品邊界、Persona、FR/AC、資料契約、NFR、里程碑與風險。
+- ✅ `PRD/UI-SPEC.md`：UI v1.0，涵蓋 responsive shell、screen contract、component contract、a11y 與 states。
+- ✅ `prototype/openptt.html`：獨立 HTML prototype，涵蓋首頁、看板列表、看板頁、文章閱讀、收藏、指定看板關鍵字訂閱、主題切換與 mobile nav。
+- ✅ 關鍵字訂閱規格：每筆綁定單一看板與單一 keyword；prototype 以 in-app 命中提示示範，不宣稱已接通推播。
+- ✅ prototype review 已完成；後續 M3 production increment 見上方。
+
 > 最後驗收: 2026-09-05 (sandbox 自動驗證)
 > HEAD commit: `7fd14eb feat: OpenPTT Sprint 1+2`
 

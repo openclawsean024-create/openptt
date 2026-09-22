@@ -1,13 +1,14 @@
-# OpenPTT Web — Sprint 1
+# OpenPTT Web — M3 reading-first increment
 
 OpenPTT 是全平台 PTT 看板瀏覽器(Web + iOS + Android)。**Sprint 1 只做 Web PWA**,對標 BePTT。
 
 ## 本目錄狀態
 
-✅ **本機 dev server** 已可跑(Sprint 1 P0 範圍內)
-✅ **5 個看板** mock data:Stock / Gossiping / Tech_Job / NBA / Baseball
+✅ **本機 dev server** 已可跑，根入口已掛 React app
+✅ **33 個看板** mock data，含分類、搜尋、排序
+✅ **Dashboard / 閱讀歷史 / 指定看板關鍵字訂閱** 已接入 production React UI
 ✅ **TypeScript strict** 通過
-✅ **5 個 E2E 測試** (Vitest) — 涵蓋 P0-1~P0-5
+✅ **13 個 E2E 測試** (Vitest + RTL) — 涵蓋 P0 與 M3 P1 flow
 
 ⚠️ **跳過驗收**:
 - ❌ Lighthouse Performance ≥ 90 — 本機跑,需手動驗證
