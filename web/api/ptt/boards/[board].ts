@@ -1,4 +1,4 @@
-import { latestBoardPath, parseBoardHtml, PTT_ORIGIN, validBoardName, validBoardPath } from '../../lib/ptt.js'
+import { latestBoardPath, parseBoardHtml, parseBoardMarkdown, PTT_ORIGIN, PTT_READER_ORIGIN, validBoardName, validBoardPath } from '../../lib/ptt.js'
 
 interface VercelRequest {
   query: Record<string, string | string[] | undefined>
@@ -29,8 +29,18 @@ export default async function handler(request: VercelRequest, response: VercelRe
       signal: AbortSignal.timeout(10000),
     })
     const html = await upstream.text()
-    if (!upstream.ok || html.includes('請先通過年齡驗證')) return response.status(upstream.status || 502).json({ error: 'PTT board unavailable' })
-    const feed = parseBoardHtml(html, board, currentPath, fetchedAt)
+    let feed = upstream.ok && html.includes('class="r-ent"')
+      ? parseBoardHtml(html, board, currentPath, fetchedAt)
+      : null
+    if (!feed) {
+      const reader = await fetch(`${PTT_READER_ORIGIN}${currentPath}`, {
+        headers: { accept: 'text/plain', 'user-agent': 'OpenPTT/0.1' },
+        signal: AbortSignal.timeout(15000),
+      })
+      const markdown = await reader.text()
+      if (!reader.ok || !markdown.includes('Markdown Content:')) return response.status(upstream.status || reader.status || 502).json({ error: 'PTT board unavailable' })
+      feed = parseBoardMarkdown(markdown, board, currentPath, fetchedAt)
+    }
     return response
       .status(200)
       .setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=300')

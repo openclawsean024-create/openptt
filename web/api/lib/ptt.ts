@@ -1,6 +1,7 @@
 import type { Article } from '../../src/data/boards'
 
 export const PTT_ORIGIN = 'https://www.ptt.cc'
+export const PTT_READER_ORIGIN = 'https://r.jina.ai/http://www.ptt.cc'
 export const FEED_CACHE_SECONDS = 60 * 60
 
 export interface PttBoardFeed {
@@ -147,6 +148,84 @@ export function parseBoardHtml(html: string, board: string, currentPath: string,
   }
 }
 
+function markdownLink(value: string): { label: string; href: string } | null {
+  const match = value.match(/^\[(.*)\]\((https?:\/\/[^)]+)\)$/)
+  return match ? { label: match[1], href: match[2] } : null
+}
+
+function markdownArticlePath(href: string, board: string): string | null {
+  try {
+    const url = new URL(href)
+    const path = url.pathname
+    const prefix = `/bbs/${board}/`
+    const filename = path.startsWith(prefix) ? path.slice(prefix.length) : ''
+    return /^M\.[A-Za-z0-9.]+\.html$/.test(filename) ? path : null
+  } catch {
+    return null
+  }
+}
+
+function markdownPagePath(board: string, currentPath: string, offset: number): string {
+  const match = currentPath.match(/\/index(\d*)\.html$/)
+  const current = match?.[1] ? Number(match[1]) : 0
+  const target = current + offset
+  return target <= 0 ? `/bbs/${board}/index.html` : `/bbs/${board}/index${target}.html`
+}
+
+export function parseBoardMarkdown(markdown: string, board: string, currentPath: string, fetchedAt = new Date().toISOString()): PttBoardFeed {
+  const lines = markdown.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+  const articles: Article[] = []
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const link = markdownLink(lines[index])
+    if (!link) continue
+    const articleUrl = markdownArticlePath(link.href, board)
+    if (!articleUrl) continue
+    const articleId = articleUrl.split('/').pop()?.replace(/\.html$/, '') ?? ''
+    if (!articleId) continue
+    const context = lines.slice(Math.max(0, index - 8), index)
+    const recommendationLine = [...context].reverse().find(line => /^\d+$/.test(line) || line === '爆') ?? ''
+    const recommendation = recommendationLine === '爆'
+      ? { pushes: 100, isHot: true }
+      : parseRecommendation(recommendationLine)
+    const author = lines[index + 1] && !lines[index + 1].startsWith('[') ? lines[index + 1] : 'unknown'
+    const title = link.label.trim()
+    const isPin = context.includes('M') || /^\[公告\]/.test(title)
+    articles.push({
+      id: articleId,
+      board,
+      title,
+      author,
+      authorIp: 'PTT',
+      postedAt: articleDate(articleId, ''),
+      content: '',
+      tags: tagType(title),
+      pushes: recommendation.pushes,
+      boos: 0,
+      arrows: 0,
+      isHot: recommendation.isHot,
+      isPin,
+      pushToBooRatio: recommendation.pushes > 0 ? recommendation.pushes : 0,
+      pushedToward: recommendation.pushes > 0 ? 'positive' : 'neutral',
+      source: 'ptt',
+      sourceUrl: `${PTT_ORIGIN}${articleUrl}`,
+      fetchedAt,
+    })
+  }
+
+  const staleAt = new Date(new Date(fetchedAt).getTime() + FEED_CACHE_SECONDS * 1000).toISOString()
+  return {
+    board,
+    currentPath,
+    articles,
+    olderPath: markdownPagePath(board, currentPath, 1),
+    newerPath: currentPath === latestBoardPath(board) ? null : markdownPagePath(board, currentPath, -1),
+    fetchedAt,
+    staleAt,
+    source: 'ptt',
+  }
+}
+
 export function parseArticleHtml(html: string, board: string, articleId: string, fetchedAt = new Date().toISOString()): PttArticleResult {
   const main = html.match(/<div id="main-content"[^>]*>([\s\S]*?)<div id="article-polling"/)?.[1] ?? ''
   const author = stripTags(main.match(/<span class="article-meta-tag">作者<\/span><span class="article-meta-value">([\s\S]*?)<\/span>/)?.[1] ?? 'unknown')
@@ -170,6 +249,52 @@ export function parseArticleHtml(html: string, board: string, articleId: string,
     postedAt: articleDate(articleId, postedAtText),
     content: body || `<p>${escapeHtml(title)}</p>`,
     tags,
+    pushes,
+    boos,
+    arrows,
+    isHot: pushes >= 100,
+    isPin: /^\[公告\]/.test(title),
+    pushToBooRatio: boos > 0 ? +(pushes / boos).toFixed(2) : pushes,
+    pushedToward: pushes > boos * 3 ? 'positive' : boos > pushes ? 'negative' : 'neutral',
+    source: 'ptt',
+    sourceUrl: `${PTT_ORIGIN}/bbs/${board}/${articleId}.html`,
+    fetchedAt,
+  }
+  return {
+    article,
+    fetchedAt,
+    staleAt: new Date(new Date(fetchedAt).getTime() + FEED_CACHE_SECONDS * 1000).toISOString(),
+    source: 'ptt',
+  }
+}
+
+function markdownInlineToHtml(value: string): string {
+  let result = escapeHtml(value)
+  result = result.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" class="max-w-full rounded" />')
+  result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+  return result
+}
+
+export function parseArticleMarkdown(markdown: string, board: string, articleId: string, fetchedAt = new Date().toISOString()): PttArticleResult {
+  const lines = markdown.split(/\r?\n/)
+  const author = lines.find(line => line.startsWith('作者 '))?.replace(/^作者\s+/, '').trim() || 'unknown'
+  const title = lines.find(line => line.startsWith('Title: '))?.replace(/^Title:\s+/, '').trim() || articleId
+  const postedAtText = lines.find(line => line.startsWith('時間 '))?.replace(/^時間\s+/, '').trim() || ''
+  const bodyStart = lines.findIndex(line => line.startsWith('時間 '))
+  const bodyLines = bodyStart >= 0 ? lines.slice(bodyStart + 1).filter(line => !line.includes('※ 發信站')) : []
+  const body = bodyLines.join('\n').trim()
+  const pushes = bodyLines.filter(line => /^推\s+[^:：]+\s*[:：]/.test(line)).length
+  const boos = bodyLines.filter(line => /^噓\s+[^:：]+\s*[:：]/.test(line)).length
+  const arrows = bodyLines.filter(line => /^→\s+[^:：]+\s*[:：]/.test(line)).length
+  const article: Article = {
+    id: articleId,
+    board,
+    title,
+    author,
+    authorIp: 'PTT',
+    postedAt: articleDate(articleId, postedAtText),
+    content: body ? body.split('\n').map(markdownInlineToHtml).join('<br />') : `<p>${escapeHtml(title)}</p>`,
+    tags: tagType(title),
     pushes,
     boos,
     arrows,

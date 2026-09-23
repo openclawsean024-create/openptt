@@ -1,4 +1,4 @@
-import { parseArticleHtml, PTT_ORIGIN, validBoardName } from '../../../lib/ptt.js'
+import { parseArticleHtml, parseArticleMarkdown, PTT_ORIGIN, PTT_READER_ORIGIN, validBoardName } from '../../../lib/ptt.js'
 
 interface VercelRequest {
   query: Record<string, string | string[] | undefined>
@@ -28,8 +28,18 @@ export default async function handler(request: VercelRequest, response: VercelRe
       signal: AbortSignal.timeout(10000),
     })
     const html = await upstream.text()
-    if (!upstream.ok || !html.includes('id="main-content"')) return response.status(upstream.status || 404).json({ error: 'PTT article unavailable' })
-    const result = parseArticleHtml(html, board, article, fetchedAt)
+    let result = upstream.ok && html.includes('id="main-content"')
+      ? parseArticleHtml(html, board, article, fetchedAt)
+      : null
+    if (!result) {
+      const reader = await fetch(`${PTT_READER_ORIGIN}/bbs/${board}/${article}.html`, {
+        headers: { accept: 'text/plain', 'user-agent': 'OpenPTT/0.1' },
+        signal: AbortSignal.timeout(15000),
+      })
+      const markdown = await reader.text()
+      if (!reader.ok || !markdown.includes('Markdown Content:')) return response.status(upstream.status || reader.status || 404).json({ error: 'PTT article unavailable' })
+      result = parseArticleMarkdown(markdown, board, article, fetchedAt)
+    }
     return response
       .status(200)
       .setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=300')

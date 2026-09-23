@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseArticleHtml, parseBoardHtml } from '../api/lib/ptt'
+import { parseArticleHtml, parseArticleMarkdown, parseBoardHtml, parseBoardMarkdown } from '../api/lib/ptt'
 
 describe('PTT HTML adapter', () => {
   it('parses every article row from a board index page and exposes history links', () => {
@@ -23,5 +23,17 @@ describe('PTT HTML adapter', () => {
     expect(result.article).toMatchObject({ title: '[心得] 測試文章', author: 'alice (A)', pushes: 1, boos: 1, arrows: 0, source: 'ptt' })
     expect(result.article.content).toContain('第一段')
     expect(result.article.content).toContain('第二段')
+  })
+
+  it('parses the reader-proxy markdown fallback for board and article pages', () => {
+    const board = `Title: 看板 Stock 文章列表\n\nMarkdown Content:\n32\n\n[[閒聊] 今日盤勢](https://www.ptt.cc/bbs/Stock/M.1790123403.A.A5D.html)\n\nalice\n\n⋯`
+    const article = `Title: [閒聊] 今日盤勢\n\nURL Source: https://www.ptt.cc/bbs/Stock/M.1790123403.A.A5D.html\n\nMarkdown Content:\n作者 alice (A)\n\n看板 Stock\n\n標題[閒聊] 今日盤勢\n\n時間 Wed Sep 23 08:30:00 2026\n\n第一段\n\n推 bob : 早安\n噓 eve : 不同意\n→ sam : 補充\n\n※ 發信站: 批踢踢實業坊`
+    const feed = parseBoardMarkdown(board, 'Stock', '/bbs/Stock/index.html', '2026-09-23T01:00:00.000Z')
+    const result = parseArticleMarkdown(article, 'Stock', 'M.1790123403.A.A5D', '2026-09-23T01:00:00.000Z')
+    expect(feed.articles).toHaveLength(1)
+    expect(feed.articles[0]).toMatchObject({ title: '[閒聊] 今日盤勢', author: 'alice', pushes: 32, source: 'ptt' })
+    expect(feed.olderPath).toBe('/bbs/Stock/index1.html')
+    expect(result.article).toMatchObject({ title: '[閒聊] 今日盤勢', author: 'alice (A)', pushes: 1, boos: 1, arrows: 1, source: 'ptt' })
+    expect(result.article.content).toContain('第一段')
   })
 })
