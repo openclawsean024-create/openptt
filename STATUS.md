@@ -10,11 +10,11 @@
 - ✅ React smoke：Dashboard、Stock 訂閱建立、命中提示、設定管理、390px mobile menu 已以瀏覽器驗證。
 - ✅ deterministic checks：typecheck、23/23 Vitest、build、\`git diff --check\` 通過；route smoke 18 條全部回傳 200 且保留 React root/title。
 - ✅ Codex + MiniMax follow-up：補齊看板空狀態／分類篩選、文章不存在 recovery、最愛 tabs + undo toast、Dashboard 搜尋與 `/` 快捷鍵，以及 SettingsPage UI-006 資料與隱私清除區塊；驗收紀錄見 `PRD/MINIMAX-HANDOFF.md`。
-- ✅ GitHub `main` 已 push：`6ca415c`（包含跨 runner `npm ci` lockfile 修正）。
-- ✅ GitHub Actions `35722050707`：lint、unit tests 23/23、build 全部通過。
-- ⚠️ Vercel production deploy 尚未完成：Deploy to Vercel step 因 repository secrets 不可用而失敗，未宣告 production 上線。
+- ✅ GitHub `main` 已 push：`0346005`（包含跨 runner `npm ci` lockfile 與 Vercel SPA history fallback）。
+- ✅ GitHub Actions `35802425014`：lint、unit tests、build 全部通過；Vercel action 仍因 repository secrets 未對應而失敗，改由已登入 Vercel CLI 完成 production deploy。
+- ✅ Vercel production 已上線：`https://openptt.vercel.app`，deployment `dpl_fyrucsfohJAdPAqBUbxTxQRaGWgD`，root 與 6 條主要 deep links HTTP 200。
 
-下一個 bounded increment：補齊 `VERCEL_TOKEN`、`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID` 後重跑 production deploy，再做 production HTTP 與三向對齊驗證。
+下一個 bounded increment：接入真實 PTT data adapter，並另行評估 GitHub Actions 的 Vercel project secrets 自動部署。
 
 ## M2.5 規格與 UI 原型（2026-09-21，歷史快照）
 
