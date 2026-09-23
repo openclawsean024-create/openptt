@@ -1,11 +1,11 @@
 # OpenPTT — 專案 SOP
 
-## 規格對齊狀態（2026-09-21）
+## 規格對齊狀態（2026-09-23）
 
 - ✅ `PRD/SPEC.md`：MVP v4.1，涵蓋目前 Sprint 1–2 已實作能力、對標 App 功能拆解與指定看板關鍵字訂閱。
 - ✅ `PRD/UI-SPEC.md`：UI v1.1，定義資訊架構、design tokens、響應式版面、狀態、元件契約與訂閱 flow。
 - ✅ `prototype/openptt.html`：獨立、無 build dependency 的視覺與互動原型，含閱讀歷史與關鍵字訂閱管理。
-- 🔄 production Web UI 已進入 M3：reading-first shell、Dashboard、閱讀歷史與指定看板關鍵字訂閱已接入 React；其餘對標入口與真實資料 adapter 仍分批推進。
+- 🔄 production Web UI 已進入 M4：看板文章頁與文章全文已接入 server-side PTT adapter；其餘 Dashboard 聚合、推播與搜尋索引仍分批推進。
 
 ## 技術棧
 
@@ -41,11 +41,11 @@ git diff --check
 
 ## 部署
 
-本次規格與原型工作不部署、不 push。現有 production deploy workflow 位於 `.github/workflows/ci.yml`；若日後要部署，必須先完成專案獨立驗收與 workspace 的三向對齊流程。
+production deploy target 為 Vercel。現有 workflow 位於 `.github/workflows/ci.yml`；手動驗證可從 `web/` 執行 `npx vercel deploy --prod --yes --project openptt`。部署後必須完成 production HTTP route smoke 與 workspace 三向對齊流程。
 
 ## Known debt
 
-- 真實 PTT data adapter、全文搜尋、通知、Capacitor shell 尚未實作。
+- Dashboard 跨板真實聚合、全文搜尋、通知、Capacitor shell 尚未實作。
 - 關鍵字訂閱已接入 React production UI，仍是 local-only in-app 命中提示，尚未接 Web Push。
 - 現有 CI 的 lint job 以 `continue-on-error` 執行，且 repo 暫無 lint script；這是工程債，不視為 lint 通過。
 - `web/public/dashboard.html` 是舊的設計草稿；新工作應以 `prototype/openptt.html` 與 `PRD/UI-SPEC.md` 為準。

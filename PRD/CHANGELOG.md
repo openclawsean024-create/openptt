@@ -1,5 +1,11 @@
 # openptt · CHANGELOG
 
+## M4 — 2026-09-23 · 真實 PTT 資料 adapter
+
+- 新增 FR-010 AC-023～AC-028：看板目前文章頁完整列出、歷史 index 翻頁、文章全文 server-side proxy、來源／同步時間與一小時 cache window。
+- 明確定義「全部文章」為目前 PTT index page 的完整列加上可翻頁歷史頁，不做全站無限歷史一次性匯入。
+- PTT 受限、逾時或 HTML 格式變更時保留 mock fallback，不繞過登入、18 歲驗證或風控。
+
 ## M3 — 2026-09-21 · React production increment
 
 - 修正 \`web/index.html\`，根入口正式掛載 Vite React app，不再導向舊 dashboard 草稿。

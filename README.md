@@ -2,7 +2,7 @@
 
 OpenPTT 是一個開源的全平台 PTT 看板瀏覽器,以經典 iOS App「BePTT」為視覺與互動基準,目標是讓使用者不必打開 PTT BBS 也能在 Web / iOS / Android 上流暢地瀏覽看板、閱讀文章、切換分類、收藏常用板,並保留 PTT 原生使用者最熟悉的「推 / 噓 / → / 爆」等符號語感。
 
-目前 repo 進入 **M3 React production increment**：Web 端已接上 reading-first shell、Dashboard、閱讀歷史與指定看板關鍵字訂閱；目前仍使用 mock/static data，iOS / Android、真實 PTT adapter、推播與搜尋索引另列後續 milestone。
+目前 repo 進入 **M4 真實資料 adapter increment**：Web 端已接上 reading-first shell、Dashboard、閱讀歷史與指定看板關鍵字訂閱；看板文章列表與文章全文改由 server-side PTT adapter 取得，採每小時 cache window，PTT 來源異常時回退 mock。iOS / Android、推播與搜尋索引另列後續 milestone。
 
 ---
 
@@ -13,7 +13,8 @@ OpenPTT 是一個開源的全平台 PTT 看板瀏覽器,以經典 iOS App「BePT
 - [x] **M3 increment** — React responsive shell + Dashboard + 閱讀歷史 + 指定看板關鍵字訂閱
 - [ ] P2-6 效能(React.memo + 虛擬滾動)
 - [ ] Capacitor iOS + Android 平台殼
-- [ ] Sprint 3 真實 Ptt 爬蟲 / 推播 / search index
+- [x] **M4 第一階段** — 看板文章頁與文章全文 real PTT adapter + 1 小時快取
+- [ ] Sprint 3 推播 / search index / 全站跨板聚合
 
 ---
 

@@ -6,6 +6,7 @@ import { useSubscriptions } from '../lib/useSubscriptions'
 import { recordRecent } from '../lib/recent'
 import { addFavorite, removeFavorite } from '../lib/favorites'
 import { useFavorites } from '../lib/useFavorites'
+import { useBoardFeed } from '../lib/useBoardFeed'
 
 const PAGE_SIZE = 20
 
@@ -13,15 +14,24 @@ export default function BoardPage() {
   const { boardName } = useParams<{ boardName: string }>()
   const board = BOARDS.find(item => item.name === boardName)
   const [sort, setSort] = useState<'time' | 'hot' | 'pin'>('time')
-  const [page, setPage] = useState(1)
+  const [pagePath, setPagePath] = useState<string | null>(null)
+  const [fallbackPage, setFallbackPage] = useState(1)
   const [subscriptionOpen, setSubscriptionOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [subscriptionError, setSubscriptionError] = useState('')
   useSubscriptions()
   const favorites = useFavorites()
-  const all = useMemo(() => (boardName ? getArticles(boardName, sort) : []), [boardName, sort])
-  const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE))
-  const items = all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const feed = useBoardFeed(boardName, pagePath)
+  const fallbackAll = useMemo(() => (boardName ? getArticles(boardName, sort) : []), [boardName, sort])
+  const fetchedAll = useMemo(() => {
+    const source = feed.data?.articles ?? fallbackAll
+    if (sort === 'hot') return [...source].sort((a, b) => b.pushes - a.pushes)
+    if (sort === 'pin') return [...source].sort((a, b) => Number(b.isPin) - Number(a.isPin))
+    return [...source].sort((a, b) => b.postedAt.localeCompare(a.postedAt))
+  }, [feed.data?.articles, fallbackAll, sort])
+  const isRemote = feed.data?.source === 'ptt'
+  const items = isRemote ? fetchedAll : fetchedAll.slice((fallbackPage - 1) * PAGE_SIZE, fallbackPage * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(fetchedAll.length / PAGE_SIZE))
   const boardSubs = boardName ? getBoardSubscriptions(boardName) : []
   const faved = !!boardName && favorites.some(item => item.type === 'board' && item.id === boardName)
 
@@ -29,7 +39,7 @@ export default function BoardPage() {
     if (boardName && board) recordRecent({ type: 'board', id: boardName, label: boardName })
   }, [boardName, board])
 
-  if (!boardName || !board || all.length === 0) {
+  if (!boardName || !board || (!feed.loading && fetchedAll.length === 0)) {
     return <div className="py-12 text-center text-slate-500" data-testid="board-empty">看板不存在或尚無文章</div>
   }
 
@@ -50,6 +60,16 @@ export default function BoardPage() {
     setSubscriptionOpen(false)
   }
 
+  const moveOlder = () => {
+    if (isRemote && feed.data?.olderPath) setPagePath(feed.data.olderPath)
+    else setFallbackPage(value => Math.min(totalPages, value + 1))
+  }
+
+  const moveNewer = () => {
+    if (isRemote && feed.data?.newerPath) setPagePath(feed.data.newerPath)
+    else setFallbackPage(value => Math.max(1, value - 1))
+  }
+
   return (
     <div>
       <div className="mb-5">
@@ -64,7 +84,19 @@ export default function BoardPage() {
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex flex-col justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-700 sm:flex-row sm:items-center"><strong>{all.length} 篇文章</strong><div className="flex gap-1" role="group" aria-label="文章排序">{[['time', '最新'], ['hot', '熱門'], ['pin', '板主推薦']].map(([value, label]) => <button key={value} onClick={() => { setSort(value as 'time' | 'hot' | 'pin'); setPage(1) }} aria-pressed={sort === value} className={sort === value ? 'rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}>{label}</button>)}</div></div>
+        <div className="flex flex-col justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-700 sm:flex-row sm:items-center">
+          <div>
+            <strong>{fetchedAll.length} 篇文章</strong>
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400" data-testid="feed-status">
+              {isRemote ? <>來源：PTT · 更新於 {new Date(feed.data?.fetchedAt ?? '').toLocaleString('zh-Hant')} · 每小時重新整理</> : feed.loading ? '正在同步 PTT 文章…' : '示範資料 · PTT 暫時無法取得，資料可能過期'}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1" role="group" aria-label="文章排序">
+            {isRemote && <button onClick={() => feed.refresh()} className="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" data-testid="feed-refresh">↻ 更新</button>}
+            {[['time', '最新'], ['hot', '熱門'], ['pin', '板主推薦']].map(([value, label]) => <button key={value} onClick={() => { setSort(value as 'time' | 'hot' | 'pin'); setFallbackPage(1) }} aria-pressed={sort === value} className={sort === value ? 'rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}>{label}</button>)}
+          </div>
+        </div>
+        {feed.error && <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200" role="status" data-testid="feed-stale">PTT 暫時無法同步（{feed.error}），目前顯示可用資料。</div>}
         <ul className="divide-y divide-slate-200 dark:divide-slate-700" data-testid="article-list">
           {items.map(article => {
             const matches = keywordMatches(article)
@@ -87,7 +119,7 @@ export default function BoardPage() {
         </ul>
       </section>
 
-      {totalPages > 1 && <div className="mt-4 flex justify-center gap-2 text-sm"><button disabled={page === 1} onClick={() => setPage(value => value - 1)} className="rounded-lg border px-3 py-1.5 disabled:opacity-40 dark:border-slate-600">上一頁</button><span className="px-3 py-1.5">{page} / {totalPages}</span><button disabled={page === totalPages} onClick={() => setPage(value => value + 1)} className="rounded-lg border px-3 py-1.5 disabled:opacity-40 dark:border-slate-600">下一頁</button></div>}
+      {((isRemote && (feed.data?.olderPath || feed.data?.newerPath)) || (!isRemote && totalPages > 1)) && <div className="mt-4 flex justify-center gap-2 text-sm"><button disabled={isRemote ? !feed.data?.newerPath : fallbackPage === 1} onClick={moveNewer} className="rounded-lg border px-3 py-1.5 disabled:opacity-40 dark:border-slate-600">較新文章</button><span className="px-3 py-1.5">{isRemote ? 'PTT 分頁' : `${fallbackPage} / ${totalPages}`}</span><button disabled={isRemote ? !feed.data?.olderPath : fallbackPage === totalPages} onClick={moveOlder} className="rounded-lg border px-3 py-1.5 disabled:opacity-40 dark:border-slate-600">較舊文章</button></div>}
 
       {subscriptionOpen && <div className="fixed inset-0 z-30 flex items-end justify-center bg-slate-950/50 p-0 sm:items-center sm:p-5" role="presentation" onClick={() => setSubscriptionOpen(false)}>
         <div className="w-full max-w-lg rounded-t-2xl bg-white p-5 shadow-2xl dark:bg-slate-900 sm:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="subscription-title" onClick={event => event.stopPropagation()}>

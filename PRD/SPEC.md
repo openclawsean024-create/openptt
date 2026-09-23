@@ -1,7 +1,7 @@
-# OpenPTT · Product Requirements Document v4.1
+# OpenPTT · Product Requirements Document v4.2
 
 > 文件狀態：Draft for product / UI alignment
-> 更新日期：2026-09-21
+> 更新日期：2026-09-23
 > Single source of truth：本文件定義產品範圍；`PRD/UI-SPEC.md` 定義介面契約；`prototype/openptt.html` 是視覺溝通原型。
 
 ## 1. 產品定義
@@ -155,7 +155,7 @@ flowchart LR
 | FR-007 | 首頁 Dashboard | 降低回訪成本 | 最近瀏覽、收藏看板、熱門文章有穩定入口；首次使用有空狀態。 |
 | FR-008 | 全文搜尋 | 從「找板」擴展到「找文」 | 搜尋標題與內容；顯示結果板名、時間、命中摘要；無結果可清除。 |
 | FR-009 | 最近瀏覽 | 保留閱讀上下文 | 最近 10 個板 / 文 localStorage；可清除，不存內容以外的個資。 |
-| FR-010 | 真實資料 adapter | 由 mock 過渡 | UI 只依賴 typed adapter；資料過期顯示 timestamp 與 stale state。 |
+| FR-010 | 真實 PTT 資料 adapter | 進行中 | UI 只依賴 typed adapter；每個看板的 PTT 目前文章頁完整列出 20 筆，支援歷史頁翻頁；資料經 server-side proxy 取得並以 1 小時 cache window 更新，資料過期顯示 timestamp 與 stale state。 |
 | FR-011 | 指定看板關鍵字訂閱 | 降低重複搜尋成本 | AC-018：從看板頁建立「看板 + 關鍵字」訂閱；AC-019：比對文章標題、內容與 tags；AC-020：訂閱可啟用、停用、刪除；AC-021：重新整理後保留；AC-022：命中只先提供 in-app 提示，不宣稱已接通推播。 |
 
 ### P2：驗證後才做
@@ -166,6 +166,17 @@ flowchart LR
 | FR-013 | Capacitor iOS / Android | Web UI 完成 mobile QA，且定義原生權限策略。 |
 | FR-014 | 多板 Dashboard 拖拽 | 先有足夠收藏與回訪資料，避免空功能。 |
 | FR-015 | 虛擬滾動 | 以 profiling 證明長列表為瓶頸後才引入。 |
+
+### FR-010 真實 PTT 資料 adapter Acceptance Criteria
+
+- AC-023：`/board/:board` 預設載入該 PTT 看板目前文章頁的完整文章列，不再以固定 6 篇 mock 文章冒充真實資料。
+- AC-024：看板頁可往較舊／較新的 PTT index page 翻頁；目前頁碼由 PTT source page 決定，不在前端虛構總頁數。
+- AC-025：點擊真實文章後，由 server-side adapter 取得 PTT 全文、作者、時間與推噓摘要；瀏覽器不直接呼叫 `ptt.cc`。
+- AC-026：adapter 回傳 `source`、`fetchedAt`、`staleAt`；UI 顯示資料來源與最近同步時間。
+- AC-027：Vercel response 使用 `s-maxage=3600` 與 stale-while-revalidate；同一看板資料最多每小時重新抓取一次，手動重新整理可重新驗證。
+- AC-028：PTT 回應逾時、看板受限或格式變更時，保留可閱讀的 mock fallback，並顯示「資料可能過期」錯誤狀態，不顯示假即時標籤。
+
+「全部文章」的產品定義是「目前 PTT index page 的完整列 + 可翻頁的歷史 index pages」；不包含一次性下載 PTT 全站自建以來的無限歷史文章。文章全文採點擊載入，避免每小時抓取數百篇文章造成來源負載。
 
 ## 6. Domain 與資料契約
 
@@ -200,6 +211,20 @@ interface Article {
   isPin: boolean
   pushToBooRatio?: number
   pushedToward: 'positive' | 'negative' | 'neutral'
+  source?: 'mock' | 'ptt'
+  sourceUrl?: string
+  fetchedAt?: string
+}
+
+interface BoardFeedPage {
+  board: string
+  page: number // 0 = PTT 最新頁
+  articles: Article[]
+  hasOlder: boolean
+  hasNewer: boolean
+  fetchedAt: string
+  staleAt: string
+  source: 'ptt' | 'mock'
 }
 ```
 
@@ -233,15 +258,18 @@ interface KeywordSubscription {
 ```text
 React SPA / Vite
   ├── Router: board list → board → article
-  ├── Domain: typed static/mock adapter
+  ├── Domain: typed PTT adapter + mock fallback
+  ├── Vercel Functions: server-side PTT HTML proxy / parser
+  ├── Cache: Vercel CDN s-maxage 3600s + stale-while-revalidate
   ├── Storage: favorites + theme (localStorage)
   ├── Security: DOMPurify before HTML render
-  └── Deploy: Vercel static output
+  └── Deploy: Vercel static output + serverless API
 ```
 
 ### 降級策略
 
 - 資料 adapter 失敗：顯示最後一次可用資料與「資料可能過期」提示。
+- PTT 看板受限或來源格式變更：不繞過登入／18 歲驗證／風控；回退 mock，並保留錯誤與最後同步時間。
 - localStorage 不可用：功能仍可使用，但提示「本次瀏覽不會保留收藏」。
 - 圖片載入失敗：顯示固定比例 placeholder，不讓文章排版跳動。
 - 深色模式讀不到系統偏好：預設淺色。
@@ -284,7 +312,7 @@ React SPA / Vite
 | M2 | 33 個看板、分類、排序、搜尋、metadata | ✅ |
 | M2.5 | PRD v4 + UI-SPEC + HTML prototype | 🔄 本次 |
 | M3 | 以 UI-SPEC 重構 React visual layer + P1 Dashboard / recent / keyword subscription | ⏳ 待 prototype review |
-| M4 | 真實資料 adapter、全文搜尋、stale state | ⏳ |
+| M4 | 真實 PTT 資料 adapter、文章全文 proxy、歷史頁翻頁、1 小時 stale state | 🔄 本次 |
 | M5 | Mobile QA 後評估 Capacitor / notifications | ⏳ |
 
 ## 11. 風險與決策
@@ -296,6 +324,7 @@ React SPA / Vite
 | localStorage 清除或滿額 | 中 | try/catch + 不阻斷閱讀 + P1 提供清除與備份思路。 |
 | UI 過度像管理後台 | 中 | 以 reading-first layout、文章層級與 board context 作為 UI-SPEC 核心。 |
 | 真實資料帶入 HTML | 高 | DOMPurify；不允許未消毒內容渲染。 |
+| PTT 來源限流或 Cloudflare 規則變更 | 高 | server-side adapter、每看板 1 小時 cache、逾時 fallback；不在瀏覽器繞過風控。 |
 
 ### ADR-001｜閱讀優先，不複製終端機
 
@@ -312,5 +341,5 @@ HTML prototype 位於 `prototype/`，可快速評審 UI flow，不污染 Vite bu
 ## 12. 目前已知缺口
 
 - `web/public/dashboard.html` 是舊的通用 dashboard 草稿，待 prototype 核准後移除或改成 redirect，避免兩套 UI source of truth。
-- 現有 production React 還沒有首頁 Dashboard / 最近瀏覽 / 關鍵字訂閱；M3 才實作，不在本次 prototype 直接修改。
+- M4 第一階段只保證看板文章列表與文章全文真實來源；Dashboard / 熱門聚合仍可暫時使用 mock，待 adapter 聚合 API 另開 AC。
 - `ci.yml` 的 lint job 目前可在沒有 lint script 時繼續通過；需另開 engineering debt 修正。

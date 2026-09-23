@@ -60,6 +60,9 @@ export interface Article {
   isPin: boolean
   pushToBooRatio?: number
   pushedToward: 'positive' | 'negative' | 'neutral'
+  source?: 'mock' | 'ptt'
+  sourceUrl?: string
+  fetchedAt?: string
 }
 
 const boardSeeds: Record<string, string[]> = {

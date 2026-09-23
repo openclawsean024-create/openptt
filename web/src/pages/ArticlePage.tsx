@@ -5,13 +5,14 @@ import { getArticle } from '../data/boards'
 import { addFavorite, removeFavorite } from '../lib/favorites'
 import { useFavorites } from '../lib/useFavorites'
 import { recordRecent } from '../lib/recent'
+import { useRemoteArticle } from '../lib/useRemoteArticle'
 
 export default function ArticlePage() {
   const { articleId } = useParams<{ articleId: string }>()
   const [searchParams] = useSearchParams()
   const board = searchParams.get('board') ?? ''
 
-  const article = useMemo(() => {
+  const fallbackArticle = useMemo(() => {
     if (!articleId) return undefined
     if (board) return getArticle(board, articleId)
     for (const b of ['Stock', 'Gossiping', 'Tech_Job', 'NBA', 'Baseball']) {
@@ -20,16 +21,20 @@ export default function ArticlePage() {
     }
     return undefined
   }, [articleId, board])
+  const remote = useRemoteArticle(board, articleId)
+  const article = remote.article ?? fallbackArticle
   const favorites = useFavorites()
 
   useEffect(() => {
     if (article) recordRecent({ type: 'article', id: article.id, label: article.title, board: article.board })
   }, [article])
 
+  if (!article && remote.loading) return <div className="py-12 text-center text-slate-500" data-testid="article-loading">正在載入 PTT 文章全文…</div>
+
   if (!article) return (
     <div className="py-12 text-center text-slate-500" data-testid="article-not-found">
       <p className="font-semibold">文章不存在</p>
-      <p className="mt-2 text-sm">這篇文章可能已被移除，或目前沒有對應的示範資料。</p>
+      <p className="mt-2 text-sm">這篇文章可能已被移除，或 PTT 來源暫時無法取得。</p>
       <div className="mt-4 flex justify-center gap-3 text-sm">
         {board && <Link to={`/board/${board}`} className="rounded-lg border border-slate-300 px-3 py-2 font-semibold hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">← 回看板</Link>}
         <Link to="/boards" className="rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-700">看板列表</Link>
@@ -58,6 +63,8 @@ export default function ArticlePage() {
           {faved ? '★ 已收藏' : '☆ 加最愛'}
         </button>
       </div>
+
+      {remote.error && <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200" role="status" data-testid="article-stale">PTT 全文同步暫時失敗，目前顯示可用資料。</div>}
 
       <div className="border border-slate-200 rounded p-3 mb-4 flex items-center gap-6 text-sm" data-testid="push-summary">
         <span className="text-orange-600">▲ {article.pushes} 推</span>
