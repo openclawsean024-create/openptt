@@ -1,5 +1,14 @@
 # OpenPTT — Sprint 1+2 驗收狀態
 
+## M4 真實 PTT 資料 adapter（2026-09-23）
+
+- ✅ `/board/:board` 已由 server-side adapter 取得 PTT 當下 index page 的完整文章列，支援 PTT 歷史 index page 翻頁；文章點擊後載入 PTT 全文與推噓摘要。
+- ✅ PTT 直接來源受 Vercel 出口限制時，改由 reader-proxy 取得同一公開頁面並轉成 typed feed；來源網址仍指向 PTT，失敗時保留 mock fallback 與 stale 提示。
+- ✅ 每看板 response 使用 1 小時 CDN cache window；production smoke 已確認 `x-vercel-cache: HIT`、board API 200 JSON、article API 200 JSON。
+- ✅ deterministic checks：26/26 Vitest、typecheck、Vite build、Vercel build、`git diff --check` 通過。
+- ✅ GitHub `main` 已 push：`efda2572d7ae610b2789eafbdb8216c456b884f4`。
+- ✅ Vercel production 已上線：`https://openptt.vercel.app`，deployment `dpl_AF38QfSP4LuBtSkF1iez1FuXyC4t`，root、board、article API 與主要 deep links HTTP 200。
+
 ## M3 React production increment（2026-09-21）
 
 - ✅ \`web/index.html\` 已修正為 Vite React root，不再轉址到舊 \`public/dashboard.html\`。
@@ -14,7 +23,7 @@
 - ✅ GitHub Actions `35802425014`：lint、unit tests、build 全部通過；Vercel action 仍因 repository secrets 未對應而失敗，改由已登入 Vercel CLI 完成 production deploy。
 - ✅ Vercel production 已上線：`https://openptt.vercel.app`，deployment `dpl_fyrucsfohJAdPAqBUbxTxQRaGWgD`，root 與 6 條主要 deep links HTTP 200。
 
-下一個 bounded increment：接入真實 PTT data adapter，並另行評估 GitHub Actions 的 Vercel project secrets 自動部署。
+下一個 bounded increment：將真實 adapter 擴展到 Dashboard／熱門跨板聚合，並另行評估 GitHub Actions 的 Vercel project secrets 自動部署。
 
 ## M2.5 規格與 UI 原型（2026-09-21，歷史快照）
 
@@ -130,7 +139,7 @@ export interface Article {
 
 - [ ] **P2-6 效能優化** — React.memo 重構 + 文章虛擬滾動 (react-window)
 - [ ] **Capacitor iOS + Android 平台殼** — 從 web PWA 變成原生 app
-- [ ] **Sprint 3 真實 Ptt 爬蟲** — telnet / WebSocket / Ptt API
+- [x] **Sprint 3 第一階段真實 Ptt adapter** — board index、文章全文、歷史分頁、每小時 cache；跨板聚合與推播仍待後續
 - [ ] **推播** — Web Push + 看板新文通知
 - [ ] **Search index** — Meilisearch / Typesense 全文搜尋
 - [ ] **Vercel deploy + Lighthouse 驗收** — 本機跑
@@ -142,6 +151,6 @@ export interface Article {
 | Sprint 1 | 5 P0 + 5 E2E | ✅ |
 | Sprint 2 | 33 看板 + metadata + 排序 + 搜尋 + 5 E2E | ✅ |
 | Sprint 2.5 | P2-6 效能 | ⏳ |
-| Sprint 3 | 真實 Ptt 爬蟲 + 推播 + search index | ⏳ |
+| Sprint 3 | 真實 PTT adapter + 推播 + search index | 🔄 adapter 第一階段完成 |
 | Cross-platform | Capacitor iOS + Android | ⏳ |
 | Production | Vercel deploy + Lighthouse | ⏳ |

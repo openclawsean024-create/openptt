@@ -155,7 +155,7 @@ flowchart LR
 | FR-007 | 首頁 Dashboard | 降低回訪成本 | 最近瀏覽、收藏看板、熱門文章有穩定入口；首次使用有空狀態。 |
 | FR-008 | 全文搜尋 | 從「找板」擴展到「找文」 | 搜尋標題與內容；顯示結果板名、時間、命中摘要；無結果可清除。 |
 | FR-009 | 最近瀏覽 | 保留閱讀上下文 | 最近 10 個板 / 文 localStorage；可清除，不存內容以外的個資。 |
-| FR-010 | 真實 PTT 資料 adapter | 進行中 | UI 只依賴 typed adapter；每個看板的 PTT 目前文章頁完整列出 20 筆，支援歷史頁翻頁；資料經 server-side proxy 取得並以 1 小時 cache window 更新，資料過期顯示 timestamp 與 stale state。 |
+| FR-010 | 真實 PTT 資料 adapter | 進行中 | UI 只依賴 typed adapter；每個看板完整列出 PTT 目前 index page 實際提供的文章，支援歷史頁翻頁；資料經 server-side proxy 取得並以 1 小時 cache window 更新，資料過期顯示 timestamp 與 stale state。 |
 | FR-011 | 指定看板關鍵字訂閱 | 降低重複搜尋成本 | AC-018：從看板頁建立「看板 + 關鍵字」訂閱；AC-019：比對文章標題、內容與 tags；AC-020：訂閱可啟用、停用、刪除；AC-021：重新整理後保留；AC-022：命中只先提供 in-app 提示，不宣稱已接通推播。 |
 
 ### P2：驗證後才做
@@ -169,7 +169,7 @@ flowchart LR
 
 ### FR-010 真實 PTT 資料 adapter Acceptance Criteria
 
-- AC-023：`/board/:board` 預設載入該 PTT 看板目前文章頁的完整文章列，不再以固定 6 篇 mock 文章冒充真實資料。
+- AC-023：`/board/:board` 預設載入該 PTT 看板目前 index page 的完整文章列（數量由 PTT 當下頁面決定），不再以固定 6 篇 mock 文章冒充真實資料。
 - AC-024：看板頁可往較舊／較新的 PTT index page 翻頁；目前頁碼由 PTT source page 決定，不在前端虛構總頁數。
 - AC-025：點擊真實文章後，由 server-side adapter 取得 PTT 全文、作者、時間與推噓摘要；瀏覽器不直接呼叫 `ptt.cc`。
 - AC-026：adapter 回傳 `source`、`fetchedAt`、`staleAt`；UI 顯示資料來源與最近同步時間。
@@ -260,6 +260,7 @@ React SPA / Vite
   ├── Router: board list → board → article
   ├── Domain: typed PTT adapter + mock fallback
   ├── Vercel Functions: server-side PTT HTML proxy / parser
+  │   └── PTT 受限時使用 reader-proxy 取得同一公開頁面，再轉成 typed feed
   ├── Cache: Vercel CDN s-maxage 3600s + stale-while-revalidate
   ├── Storage: favorites + theme (localStorage)
   ├── Security: DOMPurify before HTML render
@@ -324,7 +325,7 @@ React SPA / Vite
 | localStorage 清除或滿額 | 中 | try/catch + 不阻斷閱讀 + P1 提供清除與備份思路。 |
 | UI 過度像管理後台 | 中 | 以 reading-first layout、文章層級與 board context 作為 UI-SPEC 核心。 |
 | 真實資料帶入 HTML | 高 | DOMPurify；不允許未消毒內容渲染。 |
-| PTT 來源限流或 Cloudflare 規則變更 | 高 | server-side adapter、每看板 1 小時 cache、逾時 fallback；不在瀏覽器繞過風控。 |
+| PTT 來源限流或 Cloudflare 規則變更 | 高 | server-side adapter、每看板 1 小時 cache、reader-proxy fallback、逾時 fallback；不在瀏覽器繞過風控。 |
 
 ### ADR-001｜閱讀優先，不複製終端機
 

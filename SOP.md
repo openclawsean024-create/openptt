@@ -2,10 +2,10 @@
 
 ## 規格對齊狀態（2026-09-23）
 
-- ✅ `PRD/SPEC.md`：MVP v4.1，涵蓋目前 Sprint 1–2 已實作能力、對標 App 功能拆解與指定看板關鍵字訂閱。
+- ✅ `PRD/SPEC.md`：MVP v4.2，涵蓋目前 Sprint 1–2 已實作能力、對標 App 功能拆解、指定看板關鍵字訂閱與真實 PTT adapter。
 - ✅ `PRD/UI-SPEC.md`：UI v1.1，定義資訊架構、design tokens、響應式版面、狀態、元件契約與訂閱 flow。
 - ✅ `prototype/openptt.html`：獨立、無 build dependency 的視覺與互動原型，含閱讀歷史與關鍵字訂閱管理。
-- 🔄 production Web UI 已進入 M4：看板文章頁與文章全文已接入 server-side PTT adapter；其餘 Dashboard 聚合、推播與搜尋索引仍分批推進。
+- ✅ production Web UI M4 第一階段：看板文章頁與文章全文已接入 server-side PTT adapter；PTT 出口受限時有 reader-proxy fallback、每小時 CDN cache 與 mock fallback。其餘 Dashboard 聚合、推播與搜尋索引仍分批推進。
 
 ## 技術棧
 
