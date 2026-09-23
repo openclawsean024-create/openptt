@@ -1,4 +1,4 @@
-import { parseArticleHtml, PTT_ORIGIN, validBoardName } from '../../../lib/ptt'
+import { parseArticleHtml, PTT_ORIGIN, validBoardName } from '../../../lib/ptt.js'
 
 interface VercelRequest {
   query: Record<string, string | string[] | undefined>
