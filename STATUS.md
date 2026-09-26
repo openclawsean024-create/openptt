@@ -1,5 +1,13 @@
 # OpenPTT — Sprint 1+2 驗收狀態
 
+## International editorial reader release candidate（2026-09-27）
+
+- ✅ Sean 已確認 `prototype/openptt-global.html`；React production UI 已完成 editorial reading desk、horizontal masthead、responsive mobile drawer / bottom nav、dark mode 與 source boundary。
+- ✅ FR-016 閱讀佇列已完成：`openptt:queue` localStorage adapter、`/queue` route、加入／移除／清空流程；自動化測試已補齊。
+- ✅ release candidate implementation commit：`3d92bb5`（正式 release 前會以後續 release commit 為準）。
+- ✅ deterministic evidence：`npm run typecheck` exit 0、`npm test` 27/27、`npm run build` exit 0、`git diff --check` exit 0；browser smoke 通過首頁搜尋、文章 route、閱讀佇列。
+- ⏳ Production deploy、Lighthouse / axe 與三向對齊：本次 release gate 執行中。
+
 ## M4 真實 PTT 資料 adapter（2026-09-23）
 
 - ✅ `/board/:board` 已由 server-side adapter 取得 PTT 當下 index page 的完整文章列，支援 PTT 歷史 index page 翻頁；文章點擊後載入 PTT 全文與推噓摘要。
