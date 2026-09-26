@@ -1,15 +1,27 @@
-# OpenPTT · UI Specification v1.1
+# OpenPTT · UI Specification v2.0
 
-> 狀態：Visual prototype ready for review
-> 更新日期：2026-09-21
-> 對應產品規格：`PRD/SPEC.md` v4.1
-> 原型：`prototype/openptt.html`
+> 狀態：Sean confirmed; React release candidate implemented
+> 更新日期：2026-09-27
+> 對應產品規格：`PRD/SPEC.md` v4.3
+> 首選原型：`prototype/openptt-global.html`（已確認並回寫 production UI）
+> 比較版本：`prototype/openptt-redesign.html`
 
 ## 1. 設計方向
 
 ### 1.1 Design principle
 
-OpenPTT 是閱讀產品，不是管理後台。介面應讓使用者在不登入、不學習快捷鍵的情況下，快速掃讀「這是哪個板、這篇有多熱、何時發布、要不要繼續讀」。
+OpenPTT 是閱讀產品，不是管理後台。介面應讓使用者在不登入、不學習快捷鍵的情況下，快速掃讀「接下來讀什麼、這是哪個板、這篇有多熱、何時發布、要不要繼續讀」。
+
+### 1.1 Redesign thesis（v2.0）
+
+競品研究將 OpenPTT 的差異收斂成「閱讀工作台」：
+
+- **PTT Web** 的優勢是 web-first 搜尋、熱門入口、文章／作者上下文；OpenPTT 採用搜尋與上下文，但把首頁主次順序改成「繼續閱讀 → 熱門訊號 → 探索」。
+- **Mo PTT** 的優勢是收藏、分類、歷史與快速回訪；OpenPTT 保留這些資訊架構，但不引入登入、發文、回文、推噓與信件等超出 MVP 的操作。
+- **BePTT** 的優勢是功能廣度與過濾；OpenPTT 只把能降低掃讀成本的篩選留下，避免把首頁變成設定清單。
+- **官方 PTT WebSocket / terminal** 的優勢是完整性；OpenPTT 明確選擇閱讀優先、來源狀態透明與 mobile 可讀性，不模擬終端機。
+
+本次 redesign 的主要視覺假設：使用者回訪時首先需要「恢復閱讀上下文」，新使用者才需要「探索入口」。因此 dashboard 不再以多組等權卡片開始，而是以 `Continue reading`、`Signal feed`、`Reading queue` 三個層級組織。
 
 ### 1.2 Four principles
 
@@ -252,6 +264,32 @@ prototype 必須讓使用者看見完整功能地圖，但每個入口都要標�
 - 錯誤訊息避免責怪使用者，例如「找不到這篇文章」而非「文章 ID 錯誤」。
 
 ## 9. Prototype handoff
+
+### 9.1 v2.0 redesign screens
+
+`prototype/openptt-global.html` 是本次 review 的首選 candidate；`prototype/openptt-redesign.html` 保留作為上一個方向的比較版本，兩者都與既有 `prototype/openptt.html` 並存，避免 Sean 確認前影響已驗收 reference。
+
+首選版本採 editorial reader system：冷白紙面、近黑文字、電光藍識別、水平 masthead、開放式文章列與右側 reader drawer。它刻意避開上一版的米白綠卡片 dashboard，並以可延伸的語意 token、來源狀態與跨裝置互動作為產品化基線。
+
+- Desktop：240px 導覽 + 主要閱讀流 + 288px reading queue；主要文章列表不再用四欄 board card 作為首頁視覺焦點。
+- Header：全域搜尋、資料來源 freshness、主題切換與訪客狀態集中在一列，縮短從搜尋到閱讀的距離。
+- 首頁：`Continue reading`（恢復上下文）、`Signal feed`（熱門／最新切換）、`Your boards`（收藏看板）按閱讀優先級排列。
+- Article row：板名、標題、摘要、作者／時間、推噓摘要與收藏動作同一掃讀單位；熱度用短條與文字並列，不依賴大面積彩色卡片。
+- 右欄：閱讀佇列、最近看板與資料狀態；mobile 改為內容下方的 queue section，避免窄螢幕雙欄壓縮。
+- Mobile：topbar + 內容流 + 五項 bottom nav（閱讀桌、看板、熱門、收藏、佇列）；主要觸控目標至少 44px，搜尋與 filter chips 可水平滑動。
+- Prototype interaction：搜尋過濾、feed tab、board filter、收藏 toggle、文章 reader sheet、主題切換、mobile bottom nav。
+
+### 9.2 Review gate（已完成）
+
+- Sean 已於 2026-09-26 確認本候選方向，正式 React UI 已由 MiniMax 實作並由 QA 重新驗證。
+- production UI 位於 `web/src/`；prototype 仍保留作為視覺與互動溝通材料，不直接作為 production bundle。
+- 本次 release candidate 新增 FR-016 閱讀佇列，規格與自動化測試已同步補齊。
+
+### 9.3 Release candidate evidence
+
+- `npm run typecheck`、`npm test`、`npm run build`、`git diff --check` 均通過。
+- Browser smoke 已驗證首頁搜尋、文章 route、加入／移除閱讀佇列與 `/queue` 頁面。
+- Production deploy、Lighthouse / axe 與三向對齊屬本次 release gate，完成後才標記為已上線。
 
 `prototype/openptt.html` 是本規格的可操作 reference，覆蓋：
 

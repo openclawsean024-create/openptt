@@ -41,17 +41,39 @@ export default function FavoritesPage() {
 
   if (items.length === 0) {
     return (
-      <div className="text-center text-slate-500 py-12">
-        <p>還沒有任何最愛</p>
-        <p className="text-sm mt-2">到看板或文章頁按「加最愛」就會出現在這裡</p>
+      <div>
+        <section className="border-b border-[var(--line)] pb-12">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--brand)]">Your library</p>
+          <h1 className="mt-3 max-w-[760px] text-[clamp(38px,6vw,72px)] font-extrabold leading-[1.03] tracking-[-0.075em] text-[var(--ink)]">
+            Keep the<br />
+            <span className="text-[var(--brand)]">good ones.</span>
+          </h1>
+          <p className="mt-4 max-w-[560px] text-[16px] leading-[1.75] text-[var(--muted)]">
+            收藏看板與文章，不需要登入，也不把個人閱讀紀錄送到伺服器。
+          </p>
+        </section>
+        <div className="border-b border-[var(--line)] py-12 text-center text-[var(--muted)]">
+          <p>還沒有任何最愛</p>
+          <p className="mt-2 text-[12px]">到看板或文章頁按「加最愛」就會出現在這裡</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">我的最愛</h1>
-      <div className="mb-4 flex gap-2 border-b border-slate-200 dark:border-slate-700" role="tablist" aria-label="收藏篩選">
+      <section className="border-b border-[var(--line)] pb-12">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--brand)]">Your library</p>
+        <h1 className="mt-3 max-w-[760px] text-[clamp(38px,6vw,72px)] font-extrabold leading-[1.03] tracking-[-0.075em] text-[var(--ink)]">
+          Keep the<br />
+          <span className="text-[var(--brand)]">good ones.</span>
+        </h1>
+        <p className="mt-4 max-w-[560px] text-[16px] leading-[1.75] text-[var(--muted)]">
+          收藏看板與文章，不需要登入，也不把個人閱讀紀錄送到伺服器。
+        </p>
+      </section>
+
+      <div className="mt-6 flex gap-2 border-b border-[var(--line)]" role="tablist" aria-label="收藏篩選">
         {tabs.map(currentTab => (
           <button
             key={currentTab.id}
@@ -60,52 +82,63 @@ export default function FavoritesPage() {
             aria-selected={tab === currentTab.id}
             aria-pressed={tab === currentTab.id}
             onClick={() => { setTab(currentTab.id); setDragIdx(null) }}
-            className={'border-b-2 px-3 py-2 text-sm font-semibold ' + (tab === currentTab.id
-              ? 'border-emerald-500 text-emerald-700 dark:text-emerald-300'
-              : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200')}
-          >{currentTab.label}</button>
+            className={[
+              'border-b-2 px-3 py-2 text-[12px] font-extrabold',
+              tab === currentTab.id
+                ? 'border-[var(--brand)] text-[var(--brand)]'
+                : 'border-transparent text-[var(--muted)] hover:text-[var(--ink)]',
+            ].join(' ')}
+          >
+            {currentTab.label}
+          </button>
         ))}
       </div>
       {visibleItems.length === 0 ? (
-        <div className="py-10 text-center text-sm text-slate-500" data-testid="favorites-filter-empty">這個分類還沒有收藏。</div>
+        <div className="py-10 text-center text-[12px] text-[var(--muted)]" data-testid="favorites-filter-empty">這個分類還沒有收藏。</div>
       ) : (
-      <ul className="divide-y divide-slate-200 dark:divide-slate-700" data-testid="favorites-list">
-        {visibleItems.map((item, idx) => (
-          <li
-            key={`${item.type}-${item.id}`}
-            draggable={tab === 'all'}
-            onDragStart={() => handleDragStart(idx)}
-            onDragOver={handleDragOver}
-            onDrop={() => handleDrop(idx)}
-            className={'flex items-center justify-between gap-2 py-2 ' + (tab === 'all' ? 'cursor-move' : '')}
-          >
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-xs text-slate-400 w-12">
-                {item.type === 'board' ? '看板' : '文章'}
-              </span>
-              <Link
-                to={item.type === 'board' ? `/board/${item.id}` : `/article/${item.id}?board=`}
-                className="hover:underline flex-1"
-              >
-                {item.label}
-              </Link>
-            </div>
-            <button
-              onClick={() => handleRemove(item.type, item.id)}
-              className="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-              data-testid="fav-remove"
+        <ul className="border-t-2 border-[var(--ink)]" data-testid="favorites-list">
+          {visibleItems.map((item, idx) => (
+            <li
+              key={`${item.type}-${item.id}`}
+              draggable={tab === 'all'}
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(idx)}
+              className={['flex items-center justify-between gap-2 border-b border-[var(--line)] py-3', tab === 'all' ? 'cursor-move' : ''].join(' ')}
             >
-              移除
-            </button>
-          </li>
-        ))}
-      </ul>
+              <div className="flex flex-1 items-center gap-3">
+                <span className="w-12 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--faint)]">
+                  {item.type === 'board' ? '看板' : '文章'}
+                </span>
+                <Link
+                  to={item.type === 'board' ? `/board/${item.id}` : `/article/${item.id}?board=`}
+                  className="flex-1 text-[14px] font-bold text-[var(--ink)] hover:text-[var(--brand)] hover:underline"
+                >
+                  {item.label}
+                </Link>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRemove(item.type, item.id)}
+                className="inline-flex h-[28px] items-center rounded-md px-2 text-[10px] font-extrabold text-[var(--boo)] hover:bg-[var(--surface-soft)]"
+                data-testid="fav-remove"
+              >
+                移除
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
-      <p className="mt-4 text-xs text-slate-500">提示：在「全部」分頁拖拽項目可以重新排序。</p>
+      <p className="mt-4 text-[10px] text-[var(--faint)]">提示：在「全部」分頁拖拽項目可以重新排序。</p>
       {removed && (
-        <div className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-xl" role="status" aria-live="polite" data-testid="favorite-toast">
+        <div
+          className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-[12px] font-bold text-white shadow-2xl"
+          role="status"
+          aria-live="polite"
+          data-testid="favorite-toast"
+        >
           <span>已移除「{removed.label}」</span>
-          <button type="button" onClick={() => { addFavorite(removed); setRemoved(null) }} className="font-bold text-emerald-300 hover:text-emerald-200">復原</button>
+          <button type="button" onClick={() => { addFavorite(removed); setRemoved(null) }} className="font-extrabold text-[var(--brand)] hover:underline">復原</button>
         </div>
       )}
     </div>

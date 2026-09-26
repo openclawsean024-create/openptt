@@ -1,10 +1,11 @@
 # OpenPTT — 專案 SOP
 
-## 規格對齊狀態（2026-09-23）
+## 規格對齊狀態（2026-09-27）
 
-- ✅ `PRD/SPEC.md`：MVP v4.2，涵蓋目前 Sprint 1–2 已實作能力、對標 App 功能拆解、指定看板關鍵字訂閱與真實 PTT adapter。
-- ✅ `PRD/UI-SPEC.md`：UI v1.1，定義資訊架構、design tokens、響應式版面、狀態、元件契約與訂閱 flow。
+- ✅ `PRD/SPEC.md`：v4.3，新增 FR-016 閱讀佇列與國際 editorial reader release candidate 的驗收條件。
+- ✅ `PRD/UI-SPEC.md`：UI v2.0，已由 Sean 確認並落地 React production UI，定義資訊架構、design tokens、響應式版面、狀態、元件契約與閱讀佇列 flow。
 - ✅ `prototype/openptt.html`：獨立、無 build dependency 的視覺與互動原型，含閱讀歷史與關鍵字訂閱管理。
+- ✅ `prototype/openptt-global.html`：本次確認的 international editorial reader 原型；production UI 已依此實作。
 - ✅ production Web UI M4 第一階段：看板文章頁與文章全文已接入 server-side PTT adapter；PTT 出口受限時有 reader-proxy fallback、每小時 CDN cache 與 mock fallback。其餘 Dashboard 聚合、推播與搜尋索引仍分批推進。
 
 ## 技術棧

@@ -10,12 +10,14 @@ export default function ThemeToggle({ testId = 'theme-toggle' }: { testId?: stri
   }
 
   const label =
-    theme === 'light' ? '☀ 淺色' : theme === 'dark' ? '🌙 深色' : '⚙ 系統'
+    theme === 'light' ? '☀ 淺色' : theme === 'dark' ? '☾ 深色' : '⚙ 系統'
 
   return (
     <button
+      type="button"
       onClick={cycle}
-      className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm"
+      className="inline-flex h-[38px] items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--surface)] px-3 text-[11px] font-bold tracking-[0.06em] text-[var(--muted)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+      aria-label="切換主題"
       data-testid={testId}
     >
       {label}

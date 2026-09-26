@@ -1,7 +1,7 @@
-# OpenPTT · Product Requirements Document v4.2
+# OpenPTT · Product Requirements Document v4.3
 
-> 文件狀態：Draft for product / UI alignment
-> 更新日期：2026-09-23
+> 文件狀態：Approved for international editorial reader release candidate
+> 更新日期：2026-09-27
 > Single source of truth：本文件定義產品範圍；`PRD/UI-SPEC.md` 定義介面契約；`prototype/openptt.html` 是視覺溝通原型。
 
 ## 1. 產品定義
@@ -94,6 +94,9 @@ OpenPTT
 ├── 我的收藏
 │   ├── 收藏看板
 │   └── 收藏文章
+├── 閱讀佇列 /queue
+│   ├── 稍後閱讀文章
+│   └── 清空與移除
 └── 設定
     ├── 主題（系統 / 淺色 / 深色）
     └── 資料與隱私說明
@@ -116,6 +119,8 @@ flowchart LR
   C --> J[設定看板關鍵字]
   J --> K[本機儲存訂閱]
   K --> L[新文章命中提示]
+  A --> M[閱讀佇列]
+  M --> D
 ```
 
 ### 4.3 對標 App 功能拆解
@@ -157,6 +162,7 @@ flowchart LR
 | FR-009 | 最近瀏覽 | 保留閱讀上下文 | 最近 10 個板 / 文 localStorage；可清除，不存內容以外的個資。 |
 | FR-010 | 真實 PTT 資料 adapter | 進行中 | UI 只依賴 typed adapter；每個看板完整列出 PTT 目前 index page 實際提供的文章，支援歷史頁翻頁；資料經 server-side proxy 取得並以 1 小時 cache window 更新，資料過期顯示 timestamp 與 stale state。 |
 | FR-011 | 指定看板關鍵字訂閱 | 降低重複搜尋成本 | AC-018：從看板頁建立「看板 + 關鍵字」訂閱；AC-019：比對文章標題、內容與 tags；AC-020：訂閱可啟用、停用、刪除；AC-021：重新整理後保留；AC-022：命中只先提供 in-app 提示，不宣稱已接通推播。 |
+| FR-016 | 閱讀佇列 | 保存稍後閱讀上下文 | AC-029：文章列可加入或移出閱讀佇列；AC-030：`/queue` 顯示佇列文章、看板與加入時間；AC-031：重新整理後保留最多 30 筆；AC-032：可單筆移除或清空；AC-033：資料只寫入本機 localStorage，不上傳、不推播、不宣稱雲端同步。 |
 
 ### P2：驗證後才做
 
@@ -250,6 +256,7 @@ interface KeywordSubscription {
 | `openptt:theme` | `light` / `dark` / `system` | 回退到 system preference |
 | `openptt:recent`（P1） | 最近瀏覽 id 陣列 | 無法寫入時不阻斷閱讀 |
 | `openptt:keyword-subscriptions`（P1） | `KeywordSubscription[]` | 無法寫入時不阻斷閱讀，顯示本次不會保留 |
+| `openptt:queue`（P1） | `QueueItem[]`，最多 30 筆稍後閱讀文章 | 無法寫入時不阻斷閱讀，維持 memory-only |
 
 不得儲存 PTT 密碼、token、email、完整 IP 歷史或任何不必要的個資。
 
@@ -297,6 +304,13 @@ React SPA / Vite
 - [ ] Lighthouse Performance / Accessibility ≥ 90：需在瀏覽器環境驗證。
 - [ ] UI-SPEC 對應的 React visual QA：prototype 核准後進行。
 - [ ] FR-011 關鍵字訂閱 production implementation：prototype 已示範，React / data adapter 尚未接入。
+
+### International editorial reader release candidate
+
+- [x] UI-SPEC v2.0 確認後已落地 React production UI：editorial reading desk、水平 masthead、mobile drawer / bottom nav、dark mode 與 source boundary。
+- [x] FR-016 閱讀佇列完成 localStorage adapter、`/queue` route、加入／移除／清空流程與自動化測試。
+- [x] `npm run typecheck`、`npm test`、`npm run build`、`git diff --check` 通過；browser smoke 已驗證搜尋、文章 route 與 queue。
+- [ ] Production deploy、Lighthouse / axe 與三向對齊：release gate 執行中。
 
 ### 每個後續 feature
 

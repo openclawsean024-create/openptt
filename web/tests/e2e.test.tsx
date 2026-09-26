@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../src/App'
 import { addFavorite, _readFavorites } from '../src/lib/favorites'
+import { _readQueue } from '../src/lib/queue'
 import { _readSubscriptions } from '../src/lib/subscriptions'
 import { BOARDS, searchBoards, getArticles } from '../src/data/boards'
 
@@ -180,6 +181,17 @@ describe('Sprint 2 - 真實 Ptt 看板清單', () => {
     expect(search).toBeInTheDocument()
     fireEvent.keyDown(document.body, { key: '/' })
     expect(document.activeElement).toBe(search)
+  })
+
+  it('文章可加入閱讀佇列，並在佇列頁移除', () => {
+    renderAt('/')
+    fireEvent.click(screen.getAllByRole('button', { name: '加入閱讀佇列' })[0])
+    expect(_readQueue()).toHaveLength(1)
+
+    renderAt('/queue')
+    expect(screen.getByTestId('queue-list')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /從佇列移除/ }))
+    expect(screen.getByTestId('queue-empty')).toBeInTheDocument()
   })
 
   it('SettingsPage 資料與隱私 section 顯示收藏/訂閱/最近瀏覽數量並提供清除按鈕', () => {
