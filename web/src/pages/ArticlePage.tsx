@@ -27,6 +27,7 @@ export default function ArticlePage() {
   const article = remote.article ?? fallbackArticle
   const favorites = useFavorites()
   const queue = useQueue()
+  const remoteIsStale = Boolean(remote.staleAt && Date.parse(remote.staleAt) <= Date.now())
 
   useEffect(() => {
     if (article) recordRecent({ type: 'article', id: article.id, label: article.title, board: article.board })
@@ -69,7 +70,7 @@ export default function ArticlePage() {
   const queued = queue.some(item => item.id === article.id)
   const toggleFav = () => {
     if (faved) removeFavorite('article', article.id)
-    else addFavorite({ type: 'article', id: article.id, label: article.title })
+    else addFavorite({ type: 'article', id: article.id, label: article.title, board: article.board })
   }
   const toggleQueue = () => {
     if (queued) removeFromQueue(article.id)
@@ -128,11 +129,16 @@ export default function ArticlePage() {
         </div>
       </div>
 
-      {remote.error && (
+      {(remote.error || remoteIsStale) && (
         <div className="mt-4 rounded-md border border-[var(--warning)] bg-[var(--warning-soft)] px-3 py-2 text-[12px] text-[var(--warning)]" role="status" data-testid="article-stale">
-          PTT 全文同步暫時失敗，目前顯示可用資料。
+          {remote.error ? 'PTT 全文同步暫時失敗，目前顯示可用資料。' : '這份 PTT 全文已超過同步時間，目前顯示可能過期的資料。'}
         </div>
       )}
+
+      <div className="mt-3 text-[10px] text-[var(--faint)]" data-testid="article-source-meta">
+        來源：{remote.source === 'ptt' ? 'PTT' : '示範資料'}
+        {remote.fetchedAt && ` · 最近同步於 ${new Date(remote.fetchedAt).toLocaleString('zh-Hant')}`}
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 font-mono text-[11px] text-[var(--muted)] tnum" data-testid="push-summary">
         <span className="text-[var(--hot)]">▲ 推 {article.pushes}</span>

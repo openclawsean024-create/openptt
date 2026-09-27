@@ -4,10 +4,13 @@ import { BOARDS, getArticles } from '../data/boards'
 import { useRecent } from '../lib/useRecent'
 import { useFavorites } from '../lib/useFavorites'
 import { useQueue } from '../lib/useQueue'
+import { useCrossBoardFeed } from '../lib/useCrossBoardFeed'
 import { enqueue, removeFromQueue } from '../lib/queue'
 import { addFavorite, removeFavorite } from '../lib/favorites'
 
 type SortKey = 'for-you' | 'latest' | 'hot'
+
+const CROSS_BOARD_BOARDS = ['Stock', 'Gossiping', 'Tech_Job', 'NBA', 'Baseball', 'movie', 'Lifeismoney', 'HatePolitics']
 
 function formatRelative(input: string | number) {
   const target = typeof input === 'number' ? input : new Date(input).getTime()
@@ -48,6 +51,11 @@ function FeedArticleRow({
           <span>討論</span>
           <span aria-hidden="true">·</span>
           <span>{formatRelative(article.postedAt)}</span>
+          {article.source === 'mock' && (
+            <span className="ml-1 inline-flex items-center rounded bg-[var(--surface-soft)] px-1.5 py-0.5 text-[9px] font-extrabold text-[var(--muted)]" data-testid={`feed-source-mock-${article.id}`}>
+              示範
+            </span>
+          )}
           {article.isHot && (
             <span className="ml-1 inline-flex items-center rounded bg-[var(--hot-soft)] px-1.5 py-0.5 text-[9px] font-extrabold text-[var(--hot)]">
               熱
@@ -115,20 +123,27 @@ export default function DashboardPage() {
   const recent = useRecent()
   const favorites = useFavorites()
   const queue = useQueue()
+  const crossFeed = useCrossBoardFeed({ boards: CROSS_BOARD_BOARDS, limit: 24 })
 
   const topBoards = useMemo(() => BOARDS.slice().sort((a, b) => b.subscribers - a.subscribers).slice(0, 6), [])
+  const crossArticles = crossFeed.data?.articles ?? []
+  const remoteArticles = useMemo(() => crossArticles.filter(article => article.source !== 'mock'), [crossArticles])
+
   const featured = useMemo(() => {
-    const sources = ['Tech_Job', 'Stock', 'Lifeismoney', 'NBA', 'Gossiping', 'Japan_Travel']
-    const all = sources.flatMap(name => getArticles(name, 'hot'))
-    return all.sort((a, b) => b.pushes - a.pushes)
-  }, [])
+    if (remoteArticles.length > 0) return [...remoteArticles].sort((a, b) => b.pushes - a.pushes)
+    const fallback = ['Tech_Job', 'Stock', 'Lifeismoney', 'NBA', 'Gossiping', 'Japan_Travel']
+      .flatMap(name => getArticles(name, 'hot'))
+      .sort((a, b) => b.pushes - a.pushes)
+    return fallback
+  }, [remoteArticles])
   const featuredStory = featured[0]
   const movingItems = featured.slice(1, 4)
 
   const allArticles = useMemo(() => {
-    const sources = ['Tech_Job', 'Stock', 'Lifeismoney', 'NBA', 'Gossiping', 'Baseball', 'movie', 'KoreaStar', 'TaichungBun', 'PC_Shopping']
-    return sources.flatMap(name => getArticles(name, 'hot'))
-  }, [])
+    if (remoteArticles.length > 0) return remoteArticles
+    return ['Tech_Job', 'Stock', 'Lifeismoney', 'NBA', 'Gossiping', 'Baseball', 'movie', 'KoreaStar', 'TaichungBun', 'PC_Shopping']
+      .flatMap(name => getArticles(name, 'hot'))
+  }, [remoteArticles])
 
   const visibleArticles = useMemo(() => {
     const q = query.trim().toLocaleLowerCase()
@@ -148,6 +163,8 @@ export default function DashboardPage() {
 
   const queuedIds = useMemo(() => new Set(queue.map(item => item.id)), [queue])
   const savedIds = useMemo(() => new Set(favorites.filter(item => item.type === 'article').map(item => item.id)), [favorites])
+  const crossPartial = crossFeed.data?.partial ?? false
+  const crossSource = crossFeed.data?.source ?? 'mock'
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -237,7 +254,7 @@ export default function DashboardPage() {
         {featuredStory && (
           <article className="flex min-h-[328px] flex-col justify-between rounded-lg bg-[var(--ink)] p-7 text-white">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#aebaff]">Editor's pick / 示範選讀</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#aebaff]">Editor's pick / 跨板熱門</p>
               <h2 className="mt-11 max-w-[630px] text-[clamp(27px,4vw,45px)] font-extrabold leading-[1.12] tracking-[-0.065em] text-white">
                 {featuredStory.title}
               </h2>
@@ -246,7 +263,10 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="mt-7 flex items-center justify-between gap-3 text-[11px] text-[#afb7c7]">
-              <span>{featuredStory.board} · {featuredStory.author} · {formatRelative(featuredStory.postedAt)}</span>
+              <span>
+                {featuredStory.board} · {featuredStory.author} · {formatRelative(featuredStory.postedAt)}
+                {featuredStory.source === 'mock' && ' · 示範快照'}
+              </span>
               <Link
                 to={`/article/${featuredStory.id}?board=${featuredStory.board}`}
                 className="inline-flex h-10 items-center rounded-md border border-[#5c72e5] bg-[var(--brand)] px-4 text-[12px] font-extrabold text-white hover:bg-[#3759ec]"
@@ -258,8 +278,14 @@ export default function DashboardPage() {
         )}
         <aside className="border-[var(--line)] pl-7 lg:border-l">
           <div className="mb-3 flex items-baseline justify-between gap-3">
-            <h2 className="text-[15px] tracking-[-0.02em] text-[var(--ink)]">What’s moving</h2>
-            <span className="text-[10px] text-[var(--faint)]">依推數排序</span>
+            <h2 className="text-[15px] tracking-[-0.02em] text-[var(--ink)]">What's moving</h2>
+            <span className="text-[10px] text-[var(--faint)]" data-testid="dashboard-cross-source">
+              {crossFeed.loading
+                ? '正在同步跨板熱門…'
+                : crossSource === 'ptt'
+                  ? `來源：PTT · 跨 ${crossFeed.data?.boards.filter(b => b.status === 'ptt').length ?? 0} 板${crossPartial ? '（部分失敗）' : ''}`
+                  : '示範快照 · PTT 暫時無法取得'}
+            </span>
           </div>
           <div className="grid">
             {movingItems.map((article, index) => (
@@ -345,8 +371,9 @@ export default function DashboardPage() {
               <h2 className="text-[22px] tracking-[-0.045em] text-[var(--ink)]">
                 {query || board !== '全部看板' ? '搜尋結果' : 'Latest signals'}
               </h2>
-              <p className="mt-1 text-[11px] text-[var(--muted)]">
-                {sortedArticles.length} 篇示範文章 · 以閱讀訊號輔助判斷
+              <p className="mt-1 text-[11px] text-[var(--muted)]" data-testid="dashboard-feed-meta">
+                {sortedArticles.length} 篇 · {crossSource === 'ptt' ? `來源 PTT · 更新於 ${formatRelative(crossFeed.data?.fetchedAt ?? '')}` : '示範快照 · PTT 暫時無法取得，資料可能過期'}
+                {crossPartial ? '（部分看板失敗）' : ''}
               </p>
             </div>
             <div className="flex items-center gap-1" role="group" aria-label="文章排序">
@@ -373,6 +400,11 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+          {crossFeed.error && (
+            <div className="border-b border-[var(--warning)] bg-[var(--warning-soft)] px-4 py-3 text-[12px] text-[var(--warning)]" role="status" data-testid="dashboard-cross-stale">
+              跨板聚合暫時無法同步（{crossFeed.error}），目前顯示可用資料。
+            </div>
+          )}
           {sortedArticles.length === 0 ? (
             <div className="border-b border-[var(--line)] py-12 text-center text-[var(--muted)]">
               <strong className="mb-1 block text-[var(--ink)]">沒有符合的文章</strong>
@@ -455,11 +487,13 @@ export default function DashboardPage() {
             <div className="border border-[var(--line)] bg-[var(--surface)] p-4">
               <div className="mb-1 flex items-center gap-1.5 text-[10px] font-extrabold text-[var(--warning)]">
                 <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
-                示範資料
+                {crossSource === 'ptt' ? 'PTT 即時' : '示範資料'}
               </div>
               <strong className="mb-1 block text-[11px] text-[var(--ink)]">來源邊界透明</strong>
-              <p className="text-[10px] leading-[1.65] text-[var(--muted)]">
-                固定快照，不把示範資料稱為即時。正式 adapter 會顯示來源與 stale 狀態，並保留可閱讀內容。
+              <p className="text-[10px] leading-[1.65] text-[var(--muted)]" data-testid="dashboard-source-note">
+                {crossSource === 'ptt'
+                  ? `跨板聚合每小時更新 · 最近同步於 ${formatRelative(crossFeed.data?.fetchedAt ?? '')}${crossPartial ? ' · 部分看板失敗回退示範' : ''}`
+                  : 'PTT 來源暫時無法取得，目前以示範快照保留可閱讀內容；不宣稱即時。'}
               </p>
             </div>
           </section>

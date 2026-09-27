@@ -13,8 +13,10 @@ const MAX_PER_BOARD = 10
 const MAX_TOTAL = 30
 type Listener = (items: KeywordSubscription[]) => void
 const listeners = new Set<Listener>()
+let memoryFallback: KeywordSubscription[] | null = null
 
 function read(): KeywordSubscription[] {
+  if (memoryFallback) return memoryFallback.slice()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const parsed = raw ? JSON.parse(raw) : []
@@ -27,8 +29,9 @@ function read(): KeywordSubscription[] {
 function write(items: KeywordSubscription[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    memoryFallback = null
   } catch {
-    // Private browsing fallback: retain the current session in memory only.
+    memoryFallback = items.slice()
   }
   const snapshot = items.slice()
   listeners.forEach(listener => listener(snapshot))

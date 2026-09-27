@@ -165,6 +165,7 @@ flowchart LR
 | FR-011 | 指定看板關鍵字訂閱 | 降低重複搜尋成本 | AC-018：從看板頁建立「看板 + 關鍵字」訂閱；AC-019：比對文章標題、內容與 tags；AC-020：訂閱可啟用、停用、刪除；AC-021：重新整理後保留；AC-022：命中只先提供 in-app 提示，不宣稱已接通推播。 |
 | FR-016 | 閱讀佇列 | 保存稍後閱讀上下文 | AC-029：文章列可加入或移出閱讀佇列；AC-030：`/queue` 顯示佇列文章、看板與加入時間；AC-031：重新整理後保留最多 30 筆；AC-032：可單筆移除或清空；AC-033：資料只寫入本機 localStorage，不上傳、不推播、不宣稱雲端同步。 |
 | FR-017 | 完整 PTT 看板目錄 | 讓使用者搜尋全站分類，而非只看固定熱門板 | AC-034：`/api/ptt/catalog` 由 server-side adapter 讀取 PTT 官方分類樹並回傳去重後的看板目錄；AC-035：看板列表支援完整目錄的名稱、描述與分類搜尋，並以 1 小時 CDN cache 降低上游壓力；AC-036：目錄同步失敗時回退到本機示範目錄並清楚標示來源，不阻斷既有閱讀流程；AC-037：從動態目錄點入的看板可正常進入看板頁並沿用 PTT adapter。 |
+| FR-018 | 跨板熱門聚合 | 讓首頁與熱門頁共用一致的跨板訊號 | AC-038：新增 `/api/ptt/cross-board`，由 server-side adapter 對一組代表性看板 fan-out 取得 typed feed；AC-039：fan-out 上限 12 板、可由 query string `boards` 與 `limit` 控制；AC-040：回傳 `source: 'ptt' \| 'mock'`、`partial: boolean`、`boards[].status: 'ptt' \| 'mock' \| 'failed'`、`fetchedAt`、`staleAt`，並使用 1 小時 `s-maxage` + `stale-while-revalidate`；AC-041：去重後依推數與時間排序，總數上限 60；AC-042：DashboardPage、HotPage、LiveHotPage 透過 typed client adapter `fetchCrossBoardFeed` 與 hook `useCrossBoardFeed` 取得資料；AC-043：來源為 mock 時 UI 顯示「示範快照 · PTT 暫時無法取得，資料可能過期」並保留可閱讀文章；部分看板失敗時 `partial=true` 並在 UI 標示「部分看板失敗」。 |
 
 ### P2：驗證後才做
 
@@ -175,6 +176,21 @@ flowchart LR
 | FR-014 | 多板 Dashboard 拖拽 | 先有足夠收藏與回訪資料，避免空功能。 |
 | FR-015 | 虛擬滾動 | 以 profiling 證明長列表為瓶頸後才引入。 |
 
+### FR-018 對應 UI 編號（cross-feed source / fallback）
+
+| UI 編號 | 元件 | 內容 / 驗證對象 |
+|---|---|---|
+| UI-018a | DashboardPage `data-testid="dashboard-cross-source"` | 「來源：PTT · 跨 N 板」或「示範快照 · PTT 暫時無法取得」 |
+| UI-018b | DashboardPage `data-testid="dashboard-feed-meta"` | 文章總數 + 來源與最近同步時間，含 `partial` 註記 |
+| UI-018c | DashboardPage `data-testid="dashboard-source-note"` | 「跨板聚合每小時更新 · 最近同步於 …」或 mock fallback copy |
+| UI-018d | DashboardPage `data-testid="dashboard-cross-stale"` | fetch 失敗時的 stale banner |
+| UI-018e | HotPage `data-testid="hot-source-meta"` | 「來源：PTT · 跨 N 板」/「示範快照」標頭 |
+| UI-018f | HotPage `data-testid="hot-stale-banner"` | fetch 失敗時降級提示 |
+| UI-018g | HotPage `data-testid="hot-source-mock-{id}"` | 顯示 mock 文章的「示範」徽章 |
+| UI-018h | LiveHotPage `data-testid="live-hot-updated"` | 即時熱門更新時間與來源文字 |
+| UI-018i | LiveHotPage `data-testid="live-hot-stale-banner"` | fetch 失敗時降級提示 |
+| UI-018j | LiveHotPage `data-testid="live-hot-source-{id}"` | 每篇文章的「即時 / 示範」徽章 |
+
 ### FR-010 真實 PTT 資料 adapter Acceptance Criteria
 
 - AC-023：`/board/:board` 預設載入該 PTT 看板目前 index page 的完整文章列（數量由 PTT 當下頁面決定），不再以固定 6 篇 mock 文章冒充真實資料。
@@ -183,6 +199,15 @@ flowchart LR
 - AC-026：adapter 回傳 `source`、`fetchedAt`、`staleAt`；UI 顯示資料來源與最近同步時間。
 - AC-027：Vercel response 使用 `s-maxage=3600` 與 stale-while-revalidate；同一看板資料最多每小時重新抓取一次，手動重新整理可重新驗證。
 - AC-028：PTT 回應逾時、看板受限或格式變更時，保留可閱讀的 mock fallback，並顯示「資料可能過期」錯誤狀態，不顯示假即時標籤。
+
+### FR-018 跨板熱門聚合 Acceptance Criteria
+
+- AC-038（API 契約）：`GET /api/ptt/cross-board` 回傳 `{ boards: CrossBoardBoardReport[]; articles: CrossBoardArticle[]; fetchedAt; staleAt; source: 'ptt' | 'mock'; partial: boolean }`，response 帶 `Cache-Control: public, s-maxage=3600, stale-while-revalidate=300` 與 `X-OpenPTT-Fetched-At`。
+- AC-039（輸入控管）：`boards` 最多 12 筆，過長截斷；空或缺值回退預設 8 板；`limit` 介於 1..60，越界或非法值回退預設 30。
+- AC-040（來源透明度）：每板回報 `status: 'ptt' | 'mock' | 'failed'`；當任一板回傳 PTT 資料時整體 `source = 'ptt'`，全部失敗時 `source = 'mock'`；失敗與成功並存時 `partial = true`。
+- AC-041（聚合規則）：依 `board:articleId` 去重；合併後依推數遞減、發文時間遞減排序；總筆數依 `limit` 截斷。
+- AC-042（前端整合）：`web/src/data/remote.ts` 匯出 `fetchCrossBoardFeed`；`web/src/lib/useCrossBoardFeed.ts` 提供 `data/loading/error/refresh`；DashboardPage、HotPage、LiveHotPage 皆透過該 hook 取得 typed feed；瀏覽器不直接呼叫 ptt.cc。
+- AC-043（降級）：PTT 全部失敗時 UI 改顯示示範快照，並在 DashboardPage 顯示「示範資料」、在 HotPage 顯示「示範快照 · PTT 暫時無法取得，資料可能過期」、在 LiveHotPage 顯示「示範快照（資料可能過期）」；`partial=true` 時三頁皆有對應 banner 文字。
 
 「全部文章」的產品定義是「目前 PTT index page 的完整列 + 可翻頁的歷史 index pages」；不包含一次性下載 PTT 全站自建以來的無限歷史文章。文章全文採點擊載入，避免每小時抓取數百篇文章造成來源負載。
 
@@ -359,5 +384,5 @@ HTML prototype 位於 `prototype/`，可快速評審 UI flow，不污染 Vite bu
 ## 12. 目前已知缺口
 
 - `web/public/dashboard.html` 是舊的通用 dashboard 草稿，待 prototype 核准後移除或改成 redirect，避免兩套 UI source of truth。
-- M4 第一階段只保證看板文章列表與文章全文真實來源；Dashboard / 熱門聚合仍可暫時使用 mock，待 adapter 聚合 API 另開 AC。
+- M4 第一階段只保證看板文章列表與文章全文真實來源；FR-018 跨板熱門聚合（AC-038..AC-043）已接上 typed adapter 與 UI 整合，仍未做 source-priority 排序與看板權重。
 - `ci.yml` 的 lint job 目前可在沒有 lint script 時繼續通過；需另開 engineering debt 修正。

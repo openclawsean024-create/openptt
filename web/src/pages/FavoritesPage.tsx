@@ -111,7 +111,7 @@ export default function FavoritesPage() {
                   {item.type === 'board' ? '看板' : '文章'}
                 </span>
                 <Link
-                  to={item.type === 'board' ? `/board/${item.id}` : `/article/${item.id}?board=`}
+                  to={item.type === 'board' ? `/board/${item.id}` : `/article/${item.id}?board=${encodeURIComponent(item.board ?? '')}`}
                   className="flex-1 text-[14px] font-bold text-[var(--ink)] hover:text-[var(--brand)] hover:underline"
                 >
                   {item.label}

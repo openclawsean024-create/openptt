@@ -172,6 +172,95 @@ function markdownPagePath(board: string, currentPath: string, offset: number): s
   return target <= 0 ? `/bbs/${board}/index.html` : `/bbs/${board}/index${target}.html`
 }
 
+export interface FetchPttBoardFeedOptions {
+  board: string
+  path?: string | null
+  fetchedAt?: string
+  signal?: AbortSignal
+}
+
+const PTT_UPSTREAM_HEADERS = {
+  'accept-language': 'zh-TW,zh;q=0.9,en;q=0.8',
+  'user-agent': 'OpenPTT/0.1 (+https://openptt.vercel.app)',
+}
+
+const PTT_READER_HEADERS = {
+  accept: 'text/plain',
+  'user-agent': 'OpenPTT/0.1',
+}
+
+const FEED_UPSTREAM_TIMEOUT_MS = 10_000
+const FEED_READER_TIMEOUT_MS = 15_000
+
+/**
+ * Best-effort typed PTT board fetch with reader-proxy fallback.
+ * Returns `null` whenever both PTT and the reader proxy fail; callers must
+ * surface this as the mock/fallback path per FR-010 / FR-018.
+ */
+export async function fetchPttBoardFeed({
+  board,
+  path,
+  fetchedAt = new Date().toISOString(),
+  signal,
+}: FetchPttBoardFeedOptions): Promise<PttBoardFeed | null> {
+  if (!validBoardName(board)) return null
+  const currentPath = validBoardPath(board, path ?? undefined)
+  const url = `${PTT_ORIGIN}${currentPath}`
+  // FR-018 / AC-042: when direct PTT fetch throws (network reset, DNS
+  // failure, etc.) we must still attempt the reader-proxy fallback before
+  // returning null. Each call is wrapped independently so a throw from the
+  // first fetch does not short-circuit the reader fallback. AbortSignal
+  // propagation is preserved through `signal` on both fetches.
+  let feed: PttBoardFeed | null = null
+  const upstreamAttempt = createAttemptSignal(signal, FEED_UPSTREAM_TIMEOUT_MS)
+  try {
+    const upstream = await fetch(url, { headers: PTT_UPSTREAM_HEADERS, signal: upstreamAttempt.signal })
+    const html = await upstream.text()
+    feed = upstream.ok && html.includes('class="r-ent"')
+      ? parseBoardHtml(html, board, currentPath, fetchedAt)
+      : null
+  } catch {
+    feed = null
+  } finally {
+    upstreamAttempt.cleanup()
+  }
+  if (!feed) {
+    const readerAttempt = createAttemptSignal(signal, FEED_READER_TIMEOUT_MS)
+    try {
+      const reader = await fetch(`${PTT_READER_ORIGIN}${currentPath}`, { headers: PTT_READER_HEADERS, signal: readerAttempt.signal })
+      const markdown = await reader.text()
+      if (reader.ok && markdown.includes('Markdown Content:')) {
+        feed = parseBoardMarkdown(markdown, board, currentPath, fetchedAt)
+      }
+    } catch {
+      feed = null
+    } finally {
+      readerAttempt.cleanup()
+    }
+  }
+  return feed
+}
+
+export const PTT_FEED_TIMEOUTS = {
+  upstreamMs: FEED_UPSTREAM_TIMEOUT_MS,
+  readerMs: FEED_READER_TIMEOUT_MS,
+}
+
+function createAttemptSignal(parent: AbortSignal | undefined, timeoutMs: number) {
+  const controller = new AbortController()
+  const abortFromParent = () => controller.abort(parent?.reason)
+  if (parent?.aborted) controller.abort(parent.reason)
+  else parent?.addEventListener('abort', abortFromParent, { once: true })
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timer)
+      parent?.removeEventListener('abort', abortFromParent)
+    },
+  }
+}
+
 export function parseBoardMarkdown(markdown: string, board: string, currentPath: string, fetchedAt = new Date().toISOString()): PttBoardFeed {
   const lines = markdown.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
   const articles: Article[] = []

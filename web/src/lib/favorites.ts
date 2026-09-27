@@ -4,25 +4,30 @@ export interface FavoriteItem {
   type: 'board' | 'article'
   id: string
   label: string
+  board?: string
   addedAt: number
 }
 
+let memoryFallback: FavoriteItem[] | null = null
+
 function read(): FavoriteItem[] {
+  if (memoryFallback) return memoryFallback.slice()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
     return Array.isArray(parsed) ? parsed : []
   } catch {
-    return [] // private browsing fallback
+    return [] // private browsing fallback; an active memory fallback returned above
   }
 }
 
 function write(items: FavoriteItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    memoryFallback = null
   } catch {
-    // private browsing fallback: in-memory only
+    memoryFallback = items.slice()
   }
 }
 

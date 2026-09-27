@@ -12,8 +12,10 @@ const STORAGE_KEY = 'openptt:recent'
 const MAX_ITEMS = 10
 type Listener = (items: RecentItem[]) => void
 const listeners = new Set<Listener>()
+let memoryFallback: RecentItem[] | null = null
 
 function read(): RecentItem[] {
+  if (memoryFallback) return memoryFallback.slice()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const parsed = raw ? JSON.parse(raw) : []
@@ -26,8 +28,9 @@ function read(): RecentItem[] {
 function write(items: RecentItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    memoryFallback = null
   } catch {
-    // Private browsing fallback: retain the current session in memory only.
+    memoryFallback = items.slice()
   }
   const snapshot = items.slice()
   listeners.forEach(listener => listener(snapshot))

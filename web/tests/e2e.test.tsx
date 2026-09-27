@@ -61,6 +61,21 @@ describe('P0 Sprint 1 E2E', () => {
     expect(_readFavorites()).toHaveLength(1)
   })
 
+  it('文章收藏保留看板 context，收藏頁可回到動態文章 route', () => {
+    addFavorite({ type: 'article', id: 'M.1790123403.A.A5D', label: 'PTT article', board: 'Stock' })
+    const favoritesPage = renderAt('/fav')
+    expect(within(favoritesPage.container).getByRole('link', { name: 'PTT article' })).toHaveAttribute(
+      'href',
+      '/article/M.1790123403.A.A5D?board=Stock',
+    )
+    favoritesPage.unmount()
+    const articleFavoritesPage = renderAt('/article-favorites')
+    expect(within(articleFavoritesPage.container).getByRole('link', { name: 'PTT article' })).toHaveAttribute(
+      'href',
+      '/article/M.1790123403.A.A5D?board=Stock',
+    )
+  })
+
   it('首頁 Dashboard 顯示繼續閱讀空狀態與熱門文章', () => {
     renderAt('/')
     expect(screen.getByTestId('dashboard')).toBeInTheDocument()
@@ -157,6 +172,15 @@ describe('Sprint 2 - 真實 Ptt 看板清單', () => {
     expect(within(empty).getByText('文章不存在')).toBeInTheDocument()
     expect(within(empty).getByRole('link', { name: '← 回看板' })).toHaveAttribute('href', '/board/Stock')
     expect(within(empty).getByRole('link', { name: '看板列表' })).toHaveAttribute('href', '/boards')
+  })
+
+  it('完整目錄的動態看板在 PTT 來源失敗時仍顯示明示示範文章', () => {
+    localStorage.setItem('openptt:board-catalog', JSON.stringify([
+      { name: 'SomeDynamicBoard', category: '測試', description: '動態測試看板', subscribers: 0 },
+    ]))
+    renderAt('/board/SomeDynamicBoard')
+    expect(screen.getByTestId('article-list')).toBeInTheDocument()
+    expect(screen.getByText('「SomeDynamicBoard」看板示範文章：PTT 來源暫時無法取得')).toBeInTheDocument()
   })
 
   it('最愛頁可依類型篩選並復原移除項目', () => {

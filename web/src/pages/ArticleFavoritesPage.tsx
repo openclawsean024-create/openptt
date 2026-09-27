@@ -29,7 +29,7 @@ export default function ArticleFavoritesPage() {
             >
               <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--faint)]">文章</span>
               <Link
-                to={'/article/' + item.id}
+                to={`/article/${item.id}?board=${encodeURIComponent(item.board ?? '')}`}
                 className="min-w-0 flex-1 truncate text-[14px] font-bold text-[var(--ink)] hover:text-[var(--brand)] hover:underline"
               >
                 {item.label}

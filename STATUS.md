@@ -1,5 +1,14 @@
 # OpenPTT — Sprint 1+2 驗收狀態
 
+## M4.5 跨板熱門聚合（FR-018 / AC-038..AC-043 / UI-018a..UI-018j，working tree，2026-09-27）
+
+- ✅ `/api/ptt/cross-board` typed server route 落地：fan-out 上限 12 板、limit 1..60、`boards` 與 `limit` query string 控管；回傳 `{ boards, articles, fetchedAt, staleAt, source: 'ptt' | 'mock', partial }`，並沿用 1 小時 `s-maxage` + `stale-while-revalidate` 與 `X-OpenPTT-Fetched-At` 標頭；本輪尚未部署 production。
+- ✅ 共用既有 `fetchPttBoardFeed` adapter（HTML → reader-proxy markdown fallback），不繞過 ptt.cc 風控；PTT 全部失敗時 server 回傳 mock snapshot，partial 失敗時 `partial=true` 並保留失敗板 report。
+- ✅ `web/src/data/remote.ts` 匯出 `fetchCrossBoardFeed`；`web/src/lib/useCrossBoardFeed.ts` 提供 `data/loading/error/refresh`；DashboardPage、HotPage、LiveHotPage 全部整合，顯示 source / stale / partial banner 與每篇 mock 徽章。
+- ✅ QA hardening：修正 limit fallback、PTT direct fetch → reader-proxy fallback、跨板 client refresh identity、動態目錄 mock fallback、收藏 board context 與 localStorage memory fallback；加入 stale metadata / race guard。
+- ✅ deterministic evidence：`npm run typecheck` exit 0、`npm test` 51/51（含 `tests/cross-board.test.ts` 10 條與 `tests/cross-board-surface.test.tsx` 12 條）、`npm run build` exit 0、`git diff --check` exit 0。
+- ⏭️ source-priority 排序、看板權重、Web Push 命中提示仍列為 follow-up，不阻擋本 increment。
+
 ## Complete board catalog + search empty-state hotfix（2026-09-27）
 
 - ✅ FR-017 已完成：server-side PTT 分類樹同步完整看板目錄，reader-proxy fallback、1 小時 CDN cache、localStorage catalog cache 與動態看板路由均已接入。
@@ -41,7 +50,7 @@
 - ✅ GitHub Actions `35802425014`：lint、unit tests、build 全部通過；Vercel action 仍因 repository secrets 未對應而失敗，改由已登入 Vercel CLI 完成 production deploy。
 - ✅ Vercel production 已上線：`https://openptt.vercel.app`，deployment `dpl_fyrucsfohJAdPAqBUbxTxQRaGWgD`，root 與 6 條主要 deep links HTTP 200。
 
-下一個 bounded increment：將真實 adapter 擴展到 Dashboard／熱門跨板聚合，並另行評估 GitHub Actions 的 Vercel project secrets 自動部署。
+下一個 bounded increment：先完成 FR-018 release gate；其後進入全文搜尋的 bounded server-side search slice，另行評估 GitHub Actions 的 Vercel project secrets 自動部署。
 
 ## M2.5 規格與 UI 原型（2026-09-21，歷史快照）
 
@@ -157,7 +166,7 @@ export interface Article {
 
 - [ ] **P2-6 效能優化** — React.memo 重構 + 文章虛擬滾動 (react-window)
 - [ ] **Capacitor iOS + Android 平台殼** — 從 web PWA 變成原生 app
-- [x] **Sprint 3 第一階段真實 Ptt adapter** — board index、文章全文、歷史分頁、每小時 cache；跨板聚合與推播仍待後續
+- [x] **Sprint 3 第一階段真實 Ptt adapter** — board index、文章全文、歷史分頁、每小時 cache；跨板聚合已完成 working-tree increment，推播仍待後續
 - [ ] **推播** — Web Push + 看板新文通知
 - [ ] **Search index** — Meilisearch / Typesense 全文搜尋
 - [x] **Vercel production deploy** — `dpl_9L3WUZnXnoXm344qeGi9NSAVHERh` READY；Lighthouse / axe 深度驗收另列 follow-up

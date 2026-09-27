@@ -14,8 +14,10 @@ const STORAGE_KEY = 'openptt:queue'
 const MAX_ITEMS = 30
 type Listener = (items: QueueItem[]) => void
 const listeners = new Set<Listener>()
+let memoryFallback: QueueItem[] | null = null
 
 function read(): QueueItem[] {
+  if (memoryFallback) return memoryFallback.slice()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const parsed = raw ? JSON.parse(raw) : []
@@ -28,8 +30,9 @@ function read(): QueueItem[] {
 function write(items: QueueItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    memoryFallback = null
   } catch {
-    // private browsing fallback: in-memory only
+    memoryFallback = items.slice()
   }
   const snapshot = items.slice()
   listeners.forEach(listener => listener(snapshot))

@@ -105,7 +105,7 @@ function tagType(title: string): string[] {
 }
 
 function generateArticles(board: string): Article[] {
-  const seeds = boardSeeds[board] ?? []
+  const seeds = boardSeeds[board] ?? [`「${board}」看板示範文章：PTT 來源暫時無法取得`]
   if (seeds.length === 0) return []
   const authors = boardAuthors[board] ?? ['user123', 'abc', 'xyz']
   return seeds.map((title, i) => {
@@ -129,6 +129,7 @@ function generateArticles(board: string): Article[] {
       isPin: i === 0 || pushes >= 100,
       pushToBooRatio: boos > 0 ? +(pushes / boos).toFixed(2) : 99,
       pushedToward: pushes > boos * 3 ? 'positive' as const : boos > pushes ? 'negative' as const : 'neutral' as const,
+      source: 'mock' as const,
     }
   })
 }

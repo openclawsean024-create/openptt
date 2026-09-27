@@ -1,21 +1,24 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchBoardPage, type BoardFeedPage } from '../data/remote'
 
 export function useBoardFeed(board: string | undefined, path: string | null) {
   const [data, setData] = useState<BoardFeedPage | null>(null)
-  const [loading, setLoading] = useState(Boolean(board))
+  const [loading, setLoading] = useState(Boolean(board) && import.meta.env.MODE !== 'test')
   const [error, setError] = useState('')
+  const requestId = useRef(0)
 
   const load = useCallback(async (refresh = false) => {
     if (!board || import.meta.env.MODE === 'test') return
+    const currentRequest = ++requestId.current
     setLoading(true)
     setError('')
     try {
-      setData(await fetchBoardPage(board, path, refresh))
+      const nextData = await fetchBoardPage(board, path, refresh)
+      if (currentRequest === requestId.current) setData(nextData)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'PTT 資料暫時無法取得')
+      if (currentRequest === requestId.current) setError(cause instanceof Error ? cause.message : 'PTT 資料暫時無法取得')
     } finally {
-      setLoading(false)
+      if (currentRequest === requestId.current) setLoading(false)
     }
   }, [board, path])
 
