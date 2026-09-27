@@ -180,7 +180,7 @@ export default function DashboardPage() {
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmed = query.trim()
-    if (trimmed) navigate(`/boards?search=${encodeURIComponent(trimmed)}`)
+    if (trimmed) navigate(`/search?q=${encodeURIComponent(trimmed)}`)
     else navigate('/boards')
   }
 

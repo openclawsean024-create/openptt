@@ -38,6 +38,29 @@ export interface CrossBoardFeed {
   partial: boolean
 }
 
+export interface SearchArticle extends Article {
+  snippet: string
+  matchFields: Array<'title' | 'content' | 'author' | 'tags'>
+}
+
+export interface SearchBoardReport {
+  board: string
+  status: 'ptt' | 'mock' | 'failed'
+  articleCount: number
+  fetchedAt?: string
+}
+
+export interface SearchFeed {
+  query: string
+  boards: SearchBoardReport[]
+  articles: SearchArticle[]
+  fetchedAt: string
+  staleAt: string
+  source: 'ptt' | 'mock'
+  partial: boolean
+  bounded: true
+}
+
 async function getJson<T>(url: string, refresh = false): Promise<T> {
   const response = await fetch(url, refresh ? { cache: 'no-store' } : undefined)
   if (!response.ok) throw new Error(`資料來源回應 ${response.status}`)
@@ -65,4 +88,17 @@ export function fetchCrossBoardFeed(options: FetchCrossBoardOptions = {}): Promi
   if (typeof options.limit === 'number') params.set('limit', String(options.limit))
   const query = params.toString()
   return getJson<CrossBoardFeed>(`/api/ptt/cross-board${query ? `?${query}` : ''}`, options.refresh)
+}
+
+export interface FetchSearchOptions {
+  query: string
+  boards?: string[]
+  limit?: number
+}
+
+export function fetchSearch(options: FetchSearchOptions): Promise<SearchFeed> {
+  const params = new URLSearchParams({ q: options.query })
+  if (options.boards && options.boards.length > 0) params.set('boards', options.boards.join(','))
+  if (typeof options.limit === 'number') params.set('limit', String(options.limit))
+  return getJson<SearchFeed>(`/api/ptt/search?${params.toString()}`)
 }

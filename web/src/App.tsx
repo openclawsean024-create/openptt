@@ -15,6 +15,7 @@ import ArticleFavoritesPage from './pages/ArticleFavoritesPage'
 import FeatureStatusPage from './pages/FeatureStatusPage'
 import AboutPage from './pages/AboutPage'
 import QueuePage from './pages/QueuePage'
+import SearchPage from './pages/SearchPage'
 import { useThemeStore } from './lib/theme'
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/boards" element={<BoardListPage />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/board/:boardName" element={<BoardPage />} />
         <Route path="/article/:articleId" element={<ArticlePage />} />
         <Route path="/fav" element={<FavoritesPage />} />

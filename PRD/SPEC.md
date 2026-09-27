@@ -159,7 +159,7 @@ flowchart LR
 | ID | 功能 | 目的 | 驗收方向 |
 |---|---|---|---|
 | FR-007 | 首頁 Dashboard | 降低回訪成本 | 最近瀏覽、收藏看板、熱門文章有穩定入口；首次使用有空狀態。 |
-| FR-008 | 全文搜尋 | 從「找板」擴展到「找文」 | 搜尋標題與內容；顯示結果板名、時間、命中摘要；無結果可清除。 |
+| FR-008 | 全文搜尋 | 從「找板」擴展到「找文」 | AC-044：`/api/ptt/search` 接受 1..80 字元 query、最多 12 個看板與 1..60 筆結果；AC-045：bounded slice 搜尋既有 PTT index page 的標題、作者、標籤與可用內容，回傳看板、時間、命中摘要、`source`、`partial`、`staleAt`，不宣稱無限全站全文索引；AC-046：Dashboard 全域搜尋導向 `/search?q=...`，SearchPage 透過 typed hook 使用 same-origin API；AC-047：PTT 全部失敗時回傳可閱讀的 mock 結果並清楚標示限制，無結果可清除。 |
 | FR-009 | 最近瀏覽 | 保留閱讀上下文 | 最近 10 個板 / 文 localStorage；可清除，不存內容以外的個資。 |
 | FR-010 | 真實 PTT 資料 adapter | 進行中 | UI 只依賴 typed adapter；每個看板完整列出 PTT 目前 index page 實際提供的文章，支援歷史頁翻頁；資料經 server-side proxy 取得並以 1 小時 cache window 更新，資料過期顯示 timestamp 與 stale state。 |
 | FR-011 | 指定看板關鍵字訂閱 | 降低重複搜尋成本 | AC-018：從看板頁建立「看板 + 關鍵字」訂閱；AC-019：比對文章標題、內容與 tags；AC-020：訂閱可啟用、停用、刪除；AC-021：重新整理後保留；AC-022：命中只先提供 in-app 提示，不宣稱已接通推播。 |
@@ -208,6 +208,13 @@ flowchart LR
 - AC-041（聚合規則）：依 `board:articleId` 去重；合併後依推數遞減、發文時間遞減排序；總筆數依 `limit` 截斷。
 - AC-042（前端整合）：`web/src/data/remote.ts` 匯出 `fetchCrossBoardFeed`；`web/src/lib/useCrossBoardFeed.ts` 提供 `data/loading/error/refresh`；DashboardPage、HotPage、LiveHotPage 皆透過該 hook 取得 typed feed；瀏覽器不直接呼叫 ptt.cc。
 - AC-043（降級）：PTT 全部失敗時 UI 改顯示示範快照，並在 DashboardPage 顯示「示範資料」、在 HotPage 顯示「示範快照 · PTT 暫時無法取得，資料可能過期」、在 LiveHotPage 顯示「示範快照（資料可能過期）」；`partial=true` 時三頁皆有對應 banner 文字。
+
+### FR-008 bounded article search Acceptance Criteria
+
+- AC-044（輸入控管）：`GET /api/ptt/search?q=...` 的 query 必須存在且不超過 80 字元；`boards` 最多 fan-out 12 板；`limit` 僅接受 1..60，非法值回退 30。
+- AC-045（資料與排序）：沿用既有 PTT index-page adapter，搜尋標題、作者、標籤與 adapter 可取得的內容；去重後依命中強度、推數、時間排序，回傳 `snippet`、`matchFields`、`fetchedAt`、`staleAt`、`source`、`partial` 與 `bounded: true`。
+- AC-046（前端整合）：Dashboard 全域搜尋導向 `/search?q=...`；SearchPage 透過 `fetchSearch` / `useArticleSearch` 取得 typed 結果，文章連結保留 `board` context；瀏覽器不直接呼叫 ptt.cc。
+- AC-047（降級與邊界）：PTT 全部失敗時顯示 mock search snapshot 與 bounded/stale 說明；部分看板失敗時保留成功結果並顯示 partial banner；無結果提供清除搜尋入口。
 
 「全部文章」的產品定義是「目前 PTT index page 的完整列 + 可翻頁的歷史 index pages」；不包含一次性下載 PTT 全站自建以來的無限歷史文章。文章全文採點擊載入，避免每小時抓取數百篇文章造成來源負載。
 
