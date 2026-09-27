@@ -128,6 +128,7 @@ Mobile
 - Search input full width；搜尋文字即時更新結果數。
 - Category chips：可水平捲動；active chip 使用 brand tint + `aria-pressed`。
 - Catalog search covers board name, PTT description and OpenPTT category; dynamic boards must remain routable into the same board reader.
+- Full directory results are progressively rendered in batches of 120; the full catalog remains searchable without forcing thousands of rows into the initial mobile DOM.
 - Board card：name、description、category、subscriber、hot badge、favorite button。
 - Desktop：3 欄；tablet：2 欄；mobile：單欄、卡片 min-height 88px。
 - 無結果：圖示 +「找不到相關看板」+ 高對比清除搜尋按鈕。

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { searchBoards, CATEGORIES, getCategoryStats } from '../data/boards'
 import { useBoardCatalog } from '../lib/useBoardCatalog'
@@ -7,6 +7,7 @@ export default function BoardListPage() {
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [category, setCategory] = useState('')
+  const [visibleCount, setVisibleCount] = useState(120)
   const { boards: directory, catalogReady } = useBoardCatalog()
 
   const boards = useMemo(() => {
@@ -20,6 +21,11 @@ export default function BoardListPage() {
   }, [stats])
   const totalBoards = directory.length
   const totalSubs = directory.reduce((sum, board) => sum + board.subscribers, 0)
+  const visibleBoards = boards.slice(0, visibleCount)
+
+  useEffect(() => {
+    setVisibleCount(120)
+  }, [category, directory, search])
 
   return (
     <div>
@@ -113,7 +119,7 @@ export default function BoardListPage() {
         </div>
       ) : (
         <ul className="border-t-2 border-[var(--ink)]" data-testid="boards-list">
-          {boards.map(board => (
+          {visibleBoards.map(board => (
             <li key={board.name}>
               <Link
                 to={`/board/${board.name}`}
@@ -145,6 +151,21 @@ export default function BoardListPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {boards.length > visibleBoards.length && (
+        <div className="border-b border-[var(--line)] py-6 text-center">
+          <p className="mb-3 text-[11px] text-[var(--muted)]">
+            已顯示 {visibleBoards.length.toLocaleString()} / {boards.length.toLocaleString()} 個結果；完整目錄已收錄，可用搜尋快速定位。
+          </p>
+          <button
+            type="button"
+            onClick={() => setVisibleCount(value => value + 120)}
+            className="inline-flex h-[40px] items-center rounded-md border border-[var(--brand)] bg-[var(--brand-soft)] px-4 text-[12px] font-extrabold text-[var(--brand)] hover:bg-[var(--surface-soft)]"
+          >
+            載入更多看板
+          </button>
+        </div>
       )}
     </div>
   )
