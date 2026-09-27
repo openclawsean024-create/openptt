@@ -60,11 +60,11 @@ function stripTags(value: string): string {
 }
 
 function classIds(html: string): string[] {
-  return Array.from(html.matchAll(/href=["']\/cls\/(\d+)["']/g), match => match[1])
+  return Array.from(html.matchAll(/(?:href=["']\/cls\/|https?:\/\/www\.ptt\.cc\/cls\/)(\d+)/g), match => match[1])
 }
 
 function boardEntries(html: string): Array<{ name: string; description: string }> {
-  return Array.from(
+  const htmlEntries = Array.from(
     html.matchAll(/href=["']\/bbs\/([A-Za-z0-9_-]+)\/index\.html["'][^>]*>([\s\S]*?)<\/a>/g),
     match => {
       const name = match[1]
@@ -78,6 +78,21 @@ function boardEntries(html: string): Array<{ name: string; description: string }
       return { name, description }
     },
   )
+  const markdownEntries = Array.from(
+    html.matchAll(/\[([^\]]+)\]\(https?:\/\/www\.ptt\.cc\/bbs\/([A-Za-z0-9_-]+)\/index\.html\)/g),
+    match => {
+      const name = match[2]
+      const label = stripTags(match[1])
+      const remainder = label.startsWith(name) ? label.slice(name.length).trim() : label
+      const description = remainder
+        .replace(/^\d+\s+/, '')
+        .replace(/^\S+\s+/, '')
+        .replace(/^◎\s*/, '')
+        .trim() || 'PTT 看板'
+      return { name, description }
+    },
+  )
+  return [...htmlEntries, ...markdownEntries]
 }
 
 async function fetchClassPage(id: string): Promise<string> {
