@@ -1,12 +1,13 @@
 # OpenPTT — Sprint 1+2 驗收狀態
 
-## M4.6 bounded article search（FR-008 / AC-044..AC-047，working tree，2026-09-27）
+## M4.6 bounded article search（FR-008 / AC-044..AC-047，已上線，2026-09-27）
 
 - ✅ 新增 `/api/ptt/search`：query 1..80 字元、最多 12 板 fan-out、limit 1..60；沿用 PTT index-page adapter，回傳 ranked snippets、`matchFields`、`source`、`partial`、`staleAt` 與 `bounded: true`。
 - ✅ PTT 全部失敗時回傳 mock search snapshot；部分失敗保留成功結果並標示 partial；瀏覽器只呼叫 same-origin typed client。
 - ✅ 新增 `fetchSearch`、`useArticleSearch`、`/search` SearchPage；Dashboard 全域搜尋已由看板搜尋改導向文章搜尋，文章連結保留 board context，無結果可清除。
 - ✅ deterministic evidence：`npm run typecheck` exit 0、`npm test` 58/58（新增 `tests/search.test.ts` 4 條與 `tests/search-surface.test.tsx` 3 條）、`npm run build` exit 0、`git diff --check` exit 0。
-- ⏭️ 這是 bounded index-page slice；Meilisearch / Typesense 持久化全文索引、Web Push、Capacitor 與本輪 production release 仍待後續 gate。
+- ✅ production smoke 7/7：root、boards、search page、search API、cross-board API、hot、article 均 HTTP 200；`q=新聞` search API 回 `source=ptt`、`bounded=true`、5 筆結果。
+- ⏭️ 這是 bounded index-page slice；Meilisearch / Typesense 持久化全文索引、Web Push 與 Capacitor 仍待後續 backlog。
 
 ## M4.5 跨板熱門聚合（FR-018 / AC-038..AC-043 / UI-018a..UI-018j，已上線，2026-09-27）
 

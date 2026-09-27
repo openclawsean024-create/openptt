@@ -8,7 +8,7 @@
 - ✅ `prototype/openptt-global.html`：本次確認的 international editorial reader 原型；production UI 已依此實作。
 - ✅ production Web UI M4 第一階段：看板文章頁與文章全文已接入 server-side PTT adapter；PTT 出口受限時有 reader-proxy fallback、每小時 CDN cache 與 mock fallback。
 - ✅ production M4.5 release（FR-018 / AC-038..AC-043 / UI-018a..UI-018j）：`/api/ptt/cross-board` typed server route + `fetchCrossBoardFeed` client adapter + `useCrossBoardFeed` hook 已整合進 DashboardPage、HotPage、LiveHotPage；PTT 全部失敗回退 mock snapshot 並顯示 stale banner，部分失敗以 `partial=true` 與「部分看板失敗」標示；沿用 1 小時 CDN cache 與 reader-proxy fallback。production smoke 與三向同步已完成。
-- ✅ working-tree M4.6 bounded article search（FR-008 / AC-044..AC-047）：`/api/ptt/search` 以既有 PTT index-page adapter 提供 query validation、bounded fan-out、ranked snippets、source/partial/stale metadata 與 mock fallback；`fetchSearch`、`useArticleSearch` 與 `/search` 已接入，Dashboard 全域搜尋改導向文章搜尋。這是 bounded slice，尚未宣稱 Meilisearch/Typesense 全站永久全文索引；待 reviewer、production smoke 與三向同步後才可宣稱 release。
+- ✅ production M4.6 bounded article search（FR-008 / AC-044..AC-047）：`/api/ptt/search` 以既有 PTT index-page adapter 提供 query validation、bounded fan-out、ranked snippets、source/partial/stale metadata 與 mock fallback；`fetchSearch`、`useArticleSearch` 與 `/search` 已接入，Dashboard 全域搜尋改導向文章搜尋。這是 bounded slice，不宣稱 Meilisearch/Typesense 全站永久全文索引；production smoke 與三向同步已完成。
 
 ## 技術棧
 
