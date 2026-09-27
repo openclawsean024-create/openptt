@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { BOARDS, getArticles } from '../data/boards'
+import { getArticles } from '../data/boards'
 import { addSubscription, getBoardSubscriptions, keywordMatches, removeSubscription, toggleSubscription } from '../lib/subscriptions'
 import { useSubscriptions } from '../lib/useSubscriptions'
 import { recordRecent } from '../lib/recent'
 import { addFavorite, removeFavorite } from '../lib/favorites'
 import { useFavorites } from '../lib/useFavorites'
 import { useBoardFeed } from '../lib/useBoardFeed'
+import { useBoardCatalog } from '../lib/useBoardCatalog'
 
 const PAGE_SIZE = 20
 
 export default function BoardPage() {
   const { boardName } = useParams<{ boardName: string }>()
-  const board = BOARDS.find(item => item.name === boardName)
+  const { boards: directory } = useBoardCatalog()
+  const board = directory.find(item => item.name === boardName)
   const [sort, setSort] = useState<'time' | 'hot' | 'pin'>('time')
   const [pagePath, setPagePath] = useState<string | null>(null)
   const [fallbackPage, setFallbackPage] = useState(1)
@@ -90,7 +92,7 @@ export default function BoardPage() {
               {boardName}
             </h1>
             <p className="mt-1 text-[12px] text-[var(--muted)]">
-              {board.description} · {board.subscribers.toLocaleString()} 人收藏這個板
+              {board.description} · {board.subscribers > 0 ? `${board.subscribers.toLocaleString()} 人收藏這個板` : 'PTT 分類目錄看板'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

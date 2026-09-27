@@ -1,6 +1,6 @@
-# OpenPTT · Product Requirements Document v4.3
+# OpenPTT · Product Requirements Document v4.4
 
-> 文件狀態：Approved for international editorial reader release candidate
+> 文件狀態：Approved for international editorial reader production release
 > 更新日期：2026-09-27
 > Single source of truth：本文件定義產品範圍；`PRD/UI-SPEC.md` 定義介面契約；`prototype/openptt.html` 是視覺溝通原型。
 
@@ -87,7 +87,8 @@ OpenPTT
 │   ├── 熱門看板
 │   └── 熱門文章
 ├── 看板列表
-│   ├── 搜尋 / 分類篩選
+│   ├── 完整 PTT 看板目錄同步
+│   └── 搜尋 / 分類篩選
 │   └── 看板頁
 │       ├── 最新 / 熱門 / 板主推薦
 │       └── 文章頁
@@ -163,6 +164,7 @@ flowchart LR
 | FR-010 | 真實 PTT 資料 adapter | 進行中 | UI 只依賴 typed adapter；每個看板完整列出 PTT 目前 index page 實際提供的文章，支援歷史頁翻頁；資料經 server-side proxy 取得並以 1 小時 cache window 更新，資料過期顯示 timestamp 與 stale state。 |
 | FR-011 | 指定看板關鍵字訂閱 | 降低重複搜尋成本 | AC-018：從看板頁建立「看板 + 關鍵字」訂閱；AC-019：比對文章標題、內容與 tags；AC-020：訂閱可啟用、停用、刪除；AC-021：重新整理後保留；AC-022：命中只先提供 in-app 提示，不宣稱已接通推播。 |
 | FR-016 | 閱讀佇列 | 保存稍後閱讀上下文 | AC-029：文章列可加入或移出閱讀佇列；AC-030：`/queue` 顯示佇列文章、看板與加入時間；AC-031：重新整理後保留最多 30 筆；AC-032：可單筆移除或清空；AC-033：資料只寫入本機 localStorage，不上傳、不推播、不宣稱雲端同步。 |
+| FR-017 | 完整 PTT 看板目錄 | 讓使用者搜尋全站分類，而非只看固定熱門板 | AC-034：`/api/ptt/catalog` 由 server-side adapter 讀取 PTT 官方分類樹並回傳去重後的看板目錄；AC-035：看板列表支援完整目錄的名稱、描述與分類搜尋，並以 1 小時 CDN cache 降低上游壓力；AC-036：目錄同步失敗時回退到本機示範目錄並清楚標示來源，不阻斷既有閱讀流程；AC-037：從動態目錄點入的看板可正常進入看板頁並沿用 PTT adapter。 |
 
 ### P2：驗證後才做
 
@@ -305,10 +307,11 @@ React SPA / Vite
 - [ ] UI-SPEC 對應的 React visual QA：prototype 核准後進行。
 - [ ] FR-011 關鍵字訂閱 production implementation：prototype 已示範，React / data adapter 尚未接入。
 
-### International editorial reader release candidate
+### International editorial reader production release
 
 - [x] UI-SPEC v2.0 確認後已落地 React production UI：editorial reading desk、水平 masthead、mobile drawer / bottom nav、dark mode 與 source boundary。
 - [x] FR-016 閱讀佇列完成 localStorage adapter、`/queue` route、加入／移除／清空流程與自動化測試。
+- [x] FR-017 完整 PTT 看板目錄：server-side 分類樹同步、localStorage cache、分類／搜尋與動態看板路由。
 - [x] `npm run typecheck`、`npm test`、`npm run build`、`git diff --check` 通過；browser smoke 已驗證搜尋、文章 route 與 queue。
 - [ ] Production deploy、Lighthouse / axe 與三向對齊：release gate 執行中。
 
@@ -324,7 +327,7 @@ React SPA / Vite
 | Milestone | 內容 | 狀態 |
 |---|---|---|
 | M1 | 5 個 P0 + Web PWA 骨架 | ✅ |
-| M2 | 33 個看板、分類、排序、搜尋、metadata | ✅ |
+| M2 | PTT 看板目錄、分類、排序、搜尋、metadata | ✅ |
 | M2.5 | PRD v4 + UI-SPEC + HTML prototype | 🔄 本次 |
 | M3 | 以 UI-SPEC 重構 React visual layer + P1 Dashboard / recent / keyword subscription | ⏳ 待 prototype review |
 | M4 | 真實 PTT 資料 adapter、文章全文 proxy、歷史頁翻頁、1 小時 stale state | 🔄 本次 |

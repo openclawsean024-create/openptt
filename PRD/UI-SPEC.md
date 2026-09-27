@@ -1,8 +1,8 @@
-# OpenPTT · UI Specification v2.0
+# OpenPTT · UI Specification v2.1
 
-> 狀態：Sean confirmed; React release candidate implemented
+> 狀態：Sean confirmed; React production release implemented
 > 更新日期：2026-09-27
-> 對應產品規格：`PRD/SPEC.md` v4.3
+> 對應產品規格：`PRD/SPEC.md` v4.4
 > 首選原型：`prototype/openptt-global.html`（已確認並回寫 production UI）
 > 比較版本：`prototype/openptt-redesign.html`
 
@@ -124,12 +124,13 @@ Mobile
 
 **目的**：用搜尋或分類快速找到板。
 
-- Page header：`看板列表` + `33 個看板`。
+- Page header：`看板列表` + PTT 完整分類目錄數量；同步成功時標示「PTT 完整分類目錄 · 每小時更新」，失敗時回退示範目錄並標示來源。
 - Search input full width；搜尋文字即時更新結果數。
 - Category chips：可水平捲動；active chip 使用 brand tint + `aria-pressed`。
+- Catalog search covers board name, PTT description and OpenPTT category; dynamic boards must remain routable into the same board reader.
 - Board card：name、description、category、subscriber、hot badge、favorite button。
 - Desktop：3 欄；tablet：2 欄；mobile：單欄、卡片 min-height 88px。
-- 無結果：圖示 +「找不到相關看板」+ 清除搜尋按鈕。
+- 無結果：圖示 +「找不到相關看板」+ 高對比清除搜尋按鈕。
 
 ### UI-003｜看板頁 / Article list
 
@@ -283,7 +284,7 @@ prototype 必須讓使用者看見完整功能地圖，但每個入口都要標�
 
 - Sean 已於 2026-09-26 確認本候選方向，正式 React UI 已由 MiniMax 實作並由 QA 重新驗證。
 - production UI 位於 `web/src/`；prototype 仍保留作為視覺與互動溝通材料，不直接作為 production bundle。
-- 本次 release candidate 新增 FR-016 閱讀佇列，規格與自動化測試已同步補齊。
+- 本次 production release 新增 FR-016 閱讀佇列與 FR-017 完整 PTT 看板目錄；規格與自動化測試已同步補齊。
 
 ### 9.3 Release candidate evidence
 

@@ -1,17 +1,25 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BOARDS, searchBoards, CATEGORIES, getCategoryStats } from '../data/boards'
+import { searchBoards, CATEGORIES, getCategoryStats } from '../data/boards'
+import { useBoardCatalog } from '../lib/useBoardCatalog'
 
 export default function BoardListPage() {
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [category, setCategory] = useState('')
+  const { boards: directory, catalogReady } = useBoardCatalog()
+
   const boards = useMemo(() => {
-    return searchBoards(search).filter(board => !category || board.category === category)
-  }, [category, search])
-  const stats = getCategoryStats()
-  const totalBoards = BOARDS.length
-  const totalSubs = BOARDS.reduce((sum, board) => sum + board.subscribers, 0)
+    return searchBoards(search, directory).filter(board => !category || board.category === category)
+  }, [category, directory, search])
+  const stats = getCategoryStats(directory)
+  const categories = useMemo(() => {
+    const known = CATEGORIES.filter(item => stats[item])
+    const rest = Object.keys(stats).filter(item => !CATEGORIES.includes(item)).sort()
+    return [...known, ...rest]
+  }, [stats])
+  const totalBoards = directory.length
+  const totalSubs = directory.reduce((sum, board) => sum + board.subscribers, 0)
 
   return (
     <div>
@@ -22,7 +30,7 @@ export default function BoardListPage() {
           <span className="text-[var(--brand)]">next board.</span>
         </h1>
         <p className="mt-4 max-w-[560px] text-[16px] leading-[1.75] text-[var(--muted)]">
-          用板名或描述探索 {totalBoards} 個看板。OpenPTT 先把上下文說清楚，再把你送進文章。
+          用板名或描述探索 {totalBoards.toLocaleString()} 個看板。OpenPTT 先把上下文說清楚，再把你送進文章。
         </p>
       </section>
 
@@ -31,7 +39,9 @@ export default function BoardListPage() {
           <div>
             <strong className="text-[var(--ink)]">{`所有看板(${boards.length})`}</strong>
             <p className="mt-1 text-[11px] text-[var(--muted)]" data-testid="board-count">
-              共 {totalBoards} 個看板 · {totalSubs.toLocaleString()} 訂閱
+              {catalogReady
+                ? <>PTT 完整分類目錄 · 每小時更新</>
+                : <>示範目錄 {totalBoards} 個看板 · {totalSubs.toLocaleString()} 訂閱</>}
             </p>
           </div>
         </div>
@@ -68,7 +78,7 @@ export default function BoardListPage() {
           >
             全部 ({totalBoards})
           </button>
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <button
               key={cat}
               type="button"
@@ -95,7 +105,7 @@ export default function BoardListPage() {
           <button
             type="button"
             onClick={() => { setSearch(''); setCategory('') }}
-            className="mt-4 inline-flex h-[38px] items-center rounded-md border border-[var(--brand)] bg-[var(--brand)] px-4 text-[11px] font-extrabold text-white hover:bg-[var(--brand-deep)]"
+            className="mt-4 inline-flex h-[40px] items-center rounded-md border border-[var(--brand)] bg-[var(--brand)] px-4 text-[12px] font-extrabold !text-white shadow-sm hover:bg-[var(--brand-deep)] hover:!text-white"
             data-testid="board-search-clear"
           >
             清除搜尋
@@ -124,7 +134,9 @@ export default function BoardListPage() {
                   <span className="block text-[18px] font-extrabold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
                     {board.description}
                   </span>
-                  <p className="mt-1 text-[10px] text-[var(--faint)]">{board.subscribers.toLocaleString()} 人關注 · 開啟看板 →</p>
+                  <p className="mt-1 text-[10px] text-[var(--faint)]">
+                    {board.subscribers > 0 ? `${board.subscribers.toLocaleString()} 人關注` : 'PTT 分類目錄'} · 開啟看板 →
+                  </p>
                 </div>
                 <div className="flex items-end justify-end text-[10px] font-extrabold text-[var(--brand)]">
                   →

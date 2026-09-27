@@ -148,19 +148,19 @@ export function getTopBoards(limit = 20): BoardMeta[] {
   return [...BOARDS].sort((a, b) => b.subscribers - a.subscribers).slice(0, limit)
 }
 
-export function searchBoards(query: string): BoardMeta[] {
-  if (!query) return BOARDS
+export function searchBoards(query: string, boards: BoardMeta[] = BOARDS): BoardMeta[] {
+  if (!query) return boards
   const q = query.toLowerCase()
-  return BOARDS.filter(b =>
+  return boards.filter(b =>
     b.name.toLowerCase().includes(q) ||
     b.description.toLowerCase().includes(q) ||
     b.category.toLowerCase().includes(q)
   )
 }
 
-export function getCategoryStats() {
+export function getCategoryStats(boards: BoardMeta[] = BOARDS) {
   const stats: Record<string, number> = {}
-  for (const b of BOARDS) {
+  for (const b of boards) {
     stats[b.category] = (stats[b.category] ?? 0) + 1
   }
   return stats
