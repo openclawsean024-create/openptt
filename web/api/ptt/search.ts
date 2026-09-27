@@ -1,5 +1,5 @@
-import type { Article } from '../../src/data/boards'
-import { getArticles } from '../../src/data/boards'
+import type { Article } from '../../src/data/boards.js'
+import { getArticles } from '../../src/data/boards.js'
 import { fetchPttBoardFeed, PTT_FEED_TIMEOUTS } from '../lib/ptt.js'
 
 interface VercelRequest {
