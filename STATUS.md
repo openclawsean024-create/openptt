@@ -1,5 +1,13 @@
 # OpenPTT — Sprint 1+2 驗收狀態
 
+## Complete board catalog + search empty-state hotfix（2026-09-27）
+
+- ✅ FR-017 已完成：server-side PTT 分類樹同步完整看板目錄，reader-proxy fallback、1 小時 CDN cache、localStorage catalog cache 與動態看板路由均已接入。
+- ✅ 看板列表採 progressive rendering，每批 120 筆；完整目錄仍可搜尋，避免一次把數千筆 row 塞入 mobile DOM。
+- ✅ 空搜尋結果的「清除搜尋」按鈕改為強制白字、高對比、40px 觸控高度，並保留 keyboard activation。
+- ✅ implementation commit：`79ac51fec68189125bf6c65eda5ad1228f40f00e`；production smoke 取得 4,566 個 PTT 看板，搜尋 `mac` 命中 `MAC` / `MacShop`，動態 `MAC` route 可進入看板頁，browser console errors 0。
+- ✅ release record commit 會在本段文件同步後再以 Vercel metadata 綁定；Lighthouse / axe 深度 QA 仍列為 follow-up。
+
 ## International editorial reader production release（2026-09-27）
 
 - ✅ Sean 已確認 `prototype/openptt-global.html`；React production UI 已完成 editorial reading desk、horizontal masthead、responsive mobile drawer / bottom nav、dark mode 與 source boundary。
